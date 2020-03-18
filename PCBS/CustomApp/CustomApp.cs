@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace xiaoye97
 {
-    [BepInPlugin("me.xiaoye97.plugins.CustomApp", "装机模拟器自定义APP", "1.0")]
+    [BepInPlugin("me.xiaoye97.plugin.CustomApp", "装机模拟器自定义APP", "1.0")]
     [BepInProcess("PCBS.exe")]
     public class CustomApp : BaseUnityPlugin
     {
@@ -16,7 +16,7 @@ namespace xiaoye97
         void Start()
         {
             SearchApps();
-            new Harmony("me.xiaoye97.plugins.CustomApp").PatchAll();
+            new Harmony("me.xiaoye97.plugin.CustomApp").PatchAll();
         }
 
         public void Log(string msg)
