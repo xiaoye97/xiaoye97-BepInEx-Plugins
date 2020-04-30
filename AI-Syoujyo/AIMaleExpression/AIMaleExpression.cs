@@ -1,17 +1,19 @@
 using System;
 using BepInEx;
 using AIChara;
+using System.IO;
+using System.Text;
 using HarmonyLib;
 using UnityEngine;
 using System.Collections.Generic;
 
 namespace xiaoye97
 {
-    [BepInPlugin("me.xiaoye97.plugin.AIMaleExpression", "AI少女男性H表情辅助插件", "1.0")]
+    [BepInPlugin("me.xiaoye97.plugin.AIMaleExpression", "AI少女男性H表情辅助插件", "1.1")]
     public class AIMaleExpression : BaseUnityPlugin
     {
         private HScene hscene;
-        public static bool windowShow; 
+        public static bool windowShow;
         private int windowId;
         private Rect windowRect = new Rect(10, 10, 900, 700);
 
@@ -41,7 +43,8 @@ namespace xiaoye97
                 try
                 {
                     ListGUI();
-                }catch(Exception e)
+                }
+                catch (Exception e)
                 {
                     Logger.LogWarning(e.Message);
                 }
@@ -53,13 +56,17 @@ namespace xiaoye97
         public static readonly float uiLabelWidth = 110, uiLabelWidth2 = 40, uiSliderWidth = 80;
         public Vector2 svPos;
         private HMotionEyeNeckMale.EyeNeck enTmp;
-        public bool showOpenEye =true, showOpenMouth = true, showEyebrow = true, showEye = true, showMouth = true;
+        public bool showOpenEye = true, showOpenMouth = true, showEyebrow = true, showEye = true, showMouth = true;
         public bool showNeckbehaviour, showEyebehaviour, showTargetNeck, showNeckRotA, showNeckRotB, showHeadRotA, showHeadRotB, showTargetEye, showEyeRotA, showEyeRotB;
         void ListGUI()
         {
             if (!string.IsNullOrEmpty(nowABPath)) GUILayout.Label($"路径:{nowABPath}");
             if (!string.IsNullOrEmpty(nowList)) GUILayout.Label($"List:{nowList}");
             if (!string.IsNullOrEmpty(nowAnim)) GUILayout.Label($"当前动画:{nowAnim}");
+            if (GUILayout.Button("保存当前数据到文件", GUILayout.Width(200)))
+            {
+                SaveNowToFile();
+            }
             if (hscene.ctrlEyeNeckMale.Length > 0 && hscene.ctrlEyeNeckMale[0] != null)
             {
                 lst = Traverse.Create(hscene.ctrlEyeNeckMale[0]).Field("lstEyeNeck").GetValue<List<HMotionEyeNeckMale.EyeNeck>>();
@@ -82,7 +89,7 @@ namespace xiaoye97
                     showEyeRotA = GUILayout.Toggle(showEyeRotA, "目角度A");
                     showEyeRotB = GUILayout.Toggle(showEyeRotB, "目角度B");
                     GUILayout.EndHorizontal();
-                    if(lst.Count>0)
+                    if (lst.Count > 0)
                     {
                         svPos = GUILayout.BeginScrollView(svPos);
                         for (int i = 0; i < lst.Count; i++)
@@ -114,6 +121,9 @@ namespace xiaoye97
 
         List<HMotionEyeNeckMale.EyeNeck> lst;
 
+        /// <summary>
+        /// int数据模板
+        /// </summary>
         void GUITemplate1(string label, string target, int index)
         {
             enTmp = lst[index];
@@ -123,7 +133,7 @@ namespace xiaoye97
             TypedReference r = __makeref(enTmp);
             if (GUILayout.Button("-", GUILayout.Width(20)))
             {
-                if(data > 0)
+                if (data > 0)
                 {
                     typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).SetValueDirect(r, data - 1);
                 }
@@ -137,6 +147,9 @@ namespace xiaoye97
             GUILayout.EndHorizontal();
         }
 
+        /// <summary>
+        /// Vector3数据模板
+        /// </summary>
         void GUITemplate2(string label, string target, int index, int aorb)
         {
             enTmp = lst[index];
@@ -166,9 +179,45 @@ namespace xiaoye97
             GUILayout.EndHorizontal();
         }
 
+        /// <summary>
+        /// 保存当前数据到文件，文件路径Bepinex/list名+动画名+时间.csv
+        /// </summary>
+        void SaveNowToFile()
+        {
+            Vector3 v;
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Anim,目開き,口開き,眉,目形,口舌形,首挙動,目挙動,首タゲ,首角度,,,,,,頭角度,,,,,,目タゲ,目角度,,,,,");
+            for (int i = 0; i < lst.Count; i++)
+            {
+                sb.Append(lst[i].anim + ",");
+                sb.Append((int)typeof(HMotionEyeNeckMale.EyeNeck).GetField("openEye").GetValue(lst[i]) + ",");
+                sb.Append((int)typeof(HMotionEyeNeckMale.EyeNeck).GetField("openMouth").GetValue(lst[i]) + ",");
+                sb.Append((int)typeof(HMotionEyeNeckMale.EyeNeck).GetField("eyebrow").GetValue(lst[i]) + ",");
+                sb.Append((int)typeof(HMotionEyeNeckMale.EyeNeck).GetField("eye").GetValue(lst[i]) + ",");
+                sb.Append((int)typeof(HMotionEyeNeckMale.EyeNeck).GetField("mouth").GetValue(lst[i]) + ",");
+                sb.Append((int)typeof(HMotionEyeNeckMale.EyeNeck).GetField("Neckbehaviour").GetValue(lst[i]) + ",");
+                sb.Append((int)typeof(HMotionEyeNeckMale.EyeNeck).GetField("Eyebehaviour").GetValue(lst[i]) + ",");
+                sb.Append((int)typeof(HMotionEyeNeckMale.EyeNeck).GetField("targetNeck").GetValue(lst[i]) + ",");
+                v = ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField("NeckRot").GetValue(lst[i]))[0];
+                sb.Append(v.x + "," + v.y + "," + v.z + ",");
+                v = ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField("NeckRot").GetValue(lst[i]))[1];
+                sb.Append(v.x + "," + v.y + "," + v.z + ",");
+                v = ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField("HeadRot").GetValue(lst[i]))[0];
+                sb.Append(v.x + "," + v.y + "," + v.z + ",");
+                v = ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField("HeadRot").GetValue(lst[i]))[1];
+                sb.Append(v.x + "," + v.y + "," + v.z + ",");
+                sb.Append((int)typeof(HMotionEyeNeckMale.EyeNeck).GetField("targetEye").GetValue(lst[i]) + ",");
+                v = ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField("EyeRot").GetValue(lst[i]))[0];
+                sb.Append(v.x + "," + v.y + "," + v.z + ",");
+                v = ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField("EyeRot").GetValue(lst[i]))[1];
+                sb.Append(v.x + "," + v.y + "," + v.z + "\n");
+            }
+            File.WriteAllText(Paths.PluginPath + nowList + "+" + nowAnim + "+" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".csv", sb.ToString());
+        }
+
         void Update()
         {
-            if(Input.GetKeyDown(KeyCode.F10))
+            if (Input.GetKeyDown(KeyCode.F10))
             {
                 windowShow = !windowShow;
             }
