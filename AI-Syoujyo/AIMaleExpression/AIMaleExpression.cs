@@ -5,12 +5,12 @@ using System.IO;
 using System.Text;
 using HarmonyLib;
 using UnityEngine;
-using System.Runtime.InteropServices;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace xiaoye97
 {
-    [BepInPlugin("me.xiaoye97.plugin.AIMaleExpression", "AI少女男性H表情辅助插件", "1.2")]
+    [BepInPlugin("me.xiaoye97.plugin.AIMaleExpression", "AI少女男性H表情辅助插件", "1.3")]
     public class AIMaleExpression : BaseUnityPlugin
     {
         private HScene hscene;
@@ -230,7 +230,11 @@ namespace xiaoye97
                 v = ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField("EyeRot").GetValue(lst[i]))[1];
                 sb.Append(v.x + "," + v.y + "," + v.z + "\n");
             }
-            File.WriteAllText(Paths.PluginPath + nowList + "+" + nowAnim + "+" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".csv", sb.ToString());
+            if (!Directory.Exists(Paths.PluginPath + "/AIMaleExpression/"))
+            {
+                Directory.CreateDirectory(Paths.PluginPath + "/AIMaleExpression/");
+            }
+            File.WriteAllText(Paths.PluginPath + "/AIMaleExpression/" + nowList + ".csv", sb.ToString());
         }
 
         /// <summary>
@@ -246,32 +250,7 @@ namespace xiaoye97
                     if (!string.IsNullOrEmpty(lines[i]))
                     {
                         string[] vs = lines[i].Split(',');
-                        Vector3[] v;
-
-                        HMotionEyeNeckMale.EyeNeck neck = new HMotionEyeNeckMale.EyeNeck();
-                        neck.anim = vs[0];
-                        neck.openEye = int.Parse(vs[1]);
-                        neck.openMouth = int.Parse(vs[2]);
-                        neck.eyebrow = int.Parse(vs[3]);
-                        neck.eye = int.Parse(vs[4]);
-                        neck.mouth = int.Parse(vs[5]);
-                        neck.Neckbehaviour = int.Parse(vs[6]);
-                        neck.Eyebehaviour = int.Parse(vs[7]);
-                        neck.targetNeck = int.Parse(vs[8]);
-                        v = new Vector3[] { Vector3.zero, Vector3.zero };
-                        v[0] = ParseV3(vs[9], vs[10], vs[11]);
-                        v[1] = ParseV3(vs[12], vs[13], vs[14]);
-                        neck.NeckRot = v;
-                        v = new Vector3[] { Vector3.zero, Vector3.zero };
-                        v[0] = ParseV3(vs[15], vs[16], vs[17]);
-                        v[1] = ParseV3(vs[18], vs[19], vs[20]);
-                        neck.HeadRot = v;
-                        neck.targetEye = int.Parse(vs[21]);
-                        v = new Vector3[] { Vector3.zero, Vector3.zero };
-                        v[0] = ParseV3(vs[22], vs[23], vs[24]);
-                        v[1] = ParseV3(vs[25], vs[26], vs[27]);
-                        neck.EyeRot = v;
-                        lst[i - 1] = neck;
+                        lst[i - 1] = ParseEyeNeckFromValues(vs);
                     }
                 }
             }
@@ -306,7 +285,11 @@ namespace xiaoye97
                 SBAddData(sb, lst[i], "EyeRot", 1);
                 sb.Append("\n");
             }
-            File.WriteAllText(Paths.PluginPath + nowList + ".MonoBehaviour", sb.ToString());
+            if (!Directory.Exists(Paths.PluginPath + "/AIMaleExpression/"))
+            {
+                Directory.CreateDirectory(Paths.PluginPath + "/AIMaleExpression/");
+            }
+            File.WriteAllText(Paths.PluginPath + "/AIMaleExpression/" + nowList + ".MonoBehaviour", sb.ToString());
         }
 
         //写入数据 - 普通int数据
@@ -343,38 +326,43 @@ namespace xiaoye97
                         line = line.Replace("<", "");
                         line = line.Replace(">", "");
                         string[] vs = line.Split(',');
-                        Vector3[] v;
-
-                        HMotionEyeNeckMale.EyeNeck neck = new HMotionEyeNeckMale.EyeNeck();
-                        neck.anim = vs[0];
-                        neck.openEye = int.Parse(vs[1]);
-                        neck.openMouth = int.Parse(vs[2]);
-                        neck.eyebrow = int.Parse(vs[3]);
-                        neck.eye = int.Parse(vs[4]);
-                        neck.mouth = int.Parse(vs[5]);
-                        neck.Neckbehaviour = int.Parse(vs[6]);
-                        neck.Eyebehaviour = int.Parse(vs[7]);
-                        neck.targetNeck = int.Parse(vs[8]);
-                        v = new Vector3[] { Vector3.zero, Vector3.zero };
-                        v[0] = ParseV3(vs[9], vs[10], vs[11]);
-                        v[1] = ParseV3(vs[12], vs[13], vs[14]);
-                        neck.NeckRot = v;
-                        v = new Vector3[] { Vector3.zero, Vector3.zero };
-                        v[0] = ParseV3(vs[15], vs[16], vs[17]);
-                        v[1] = ParseV3(vs[18], vs[19], vs[20]);
-                        neck.HeadRot = v;
-                        neck.targetEye = int.Parse(vs[21]);
-                        v = new Vector3[] { Vector3.zero, Vector3.zero };
-                        v[0] = ParseV3(vs[22], vs[23], vs[24]);
-                        v[1] = ParseV3(vs[25], vs[26], vs[27]);
-                        neck.EyeRot = v;
-                        lst[i - 3] = neck;
+                        lst[i - 3] = ParseEyeNeckFromValues(vs);
                     }
                 }
             }
         }
 
-        Vector3 ParseV3(string x, string y, string z)
+        public static HMotionEyeNeckMale.EyeNeck ParseEyeNeckFromValues(string[] vs)
+        {
+            Vector3[] v;
+            HMotionEyeNeckMale.EyeNeck neck = new HMotionEyeNeckMale.EyeNeck();
+            neck.Init();
+            neck.anim = vs[0];
+            neck.openEye = int.Parse(vs[1]);
+            neck.openMouth = int.Parse(vs[2]);
+            neck.eyebrow = int.Parse(vs[3]);
+            neck.eye = int.Parse(vs[4]);
+            neck.mouth = int.Parse(vs[5]);
+            neck.Neckbehaviour = int.Parse(vs[6]);
+            neck.Eyebehaviour = int.Parse(vs[7]);
+            neck.targetNeck = int.Parse(vs[8]);
+            v = new Vector3[] { Vector3.zero, Vector3.zero };
+            v[0] = ParseV3(vs[9], vs[10], vs[11]);
+            v[1] = ParseV3(vs[12], vs[13], vs[14]);
+            neck.NeckRot = v;
+            v = new Vector3[] { Vector3.zero, Vector3.zero };
+            v[0] = ParseV3(vs[15], vs[16], vs[17]);
+            v[1] = ParseV3(vs[18], vs[19], vs[20]);
+            neck.HeadRot = v;
+            neck.targetEye = int.Parse(vs[21]);
+            v = new Vector3[] { Vector3.zero, Vector3.zero };
+            v[0] = ParseV3(vs[22], vs[23], vs[24]);
+            v[1] = ParseV3(vs[25], vs[26], vs[27]);
+            neck.EyeRot = v;
+            return neck;
+        }
+
+        public static Vector3 ParseV3(string x, string y, string z)
         {
             Vector3 v = Vector3.zero;
             if (string.IsNullOrEmpty(x)) v.x = 0;
@@ -421,11 +409,55 @@ namespace xiaoye97
         [HarmonyPatch(typeof(HMotionEyeNeckMale), "Load")]
         class HPatch
         {
-            public static bool Prefix(string _assetpath, string _file)
+            public static bool Prefix(HMotionEyeNeckMale __instance, string _assetpath, string _file)
             {
                 Debug.Log($"男性表情:加载AB资源 路径:{_assetpath} 名称:{_file}");
                 nowABPath = _assetpath;
                 nowList = _file;
+                if (Directory.Exists($"{Paths.PluginPath}/AIMaleExpression/"))
+                {
+                    //尝试加载CSV
+                    if (File.Exists($"{Paths.PluginPath}/AIMaleExpression/{_file}.csv"))
+                    {
+                        var lines = File.ReadAllLines($"{Paths.PluginPath}/AIMaleExpression/{_file}.csv");
+                        if (lines != null)
+                        {
+                            for (int i = 1; i < lines.Length; i++)
+                            {
+                                if (!string.IsNullOrEmpty(lines[i]))
+                                {
+                                    string[] vs = lines[i].Split(',');
+                                    var lst = Traverse.Create(__instance).Field("lstEyeNeck").GetValue<List<HMotionEyeNeckMale.EyeNeck>>();
+                                    lst.Add(ParseEyeNeckFromValues(vs));
+                                }
+                            }
+                        }
+                        Debug.Log("男性表情插件:已读取插件配置覆盖原表情数据");
+                        return false;
+                    }
+                    //尝试加载MonoBehaviour文本
+                    else if (File.Exists($"{Paths.PluginPath}/AIMaleExpression/{_file}.MonoBehaviour"))
+                    {
+                        var lines = File.ReadAllLines($"{Paths.PluginPath}/AIMaleExpression/{_file}.csv");
+                        if (lines != null)
+                        {
+                            for (int i = 3; i < lines.Length; i++)
+                            {
+                                if (!string.IsNullOrEmpty(lines[i]))
+                                {
+                                    string line = lines[i].Replace("><", ",");
+                                    line = line.Replace("<", "");
+                                    line = line.Replace(">", "");
+                                    string[] vs = line.Split(',');
+                                    var lst = Traverse.Create(__instance).Field("lstEyeNeck").GetValue<List<HMotionEyeNeckMale.EyeNeck>>();
+                                    lst.Add(ParseEyeNeckFromValues(vs));
+                                }
+                            }
+                        }
+                        Debug.Log("男性表情插件:已读取插件配置覆盖原表情数据");
+                        return false;
+                    }
+                }
                 return true;
             }
         }
