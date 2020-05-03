@@ -10,10 +10,10 @@ using System.Runtime.InteropServices;
 
 namespace xiaoye97
 {
-    [BepInPlugin("me.xiaoye97.plugin.AIMaleExpression", "AI少女男性H表情辅助插件", "1.4")]
+    [BepInPlugin("me.xiaoye97.plugin.AIMaleExpression", "AI少女男性H表情辅助插件", "1.5")]
     public class AIMaleExpression : BaseUnityPlugin
     {
-        private HScene hscene;
+        private static HScene hscene;
         public static bool windowShow;
         private int windowId;
         private Rect windowRect = new Rect(10, 10, 900, 700);
@@ -45,6 +45,7 @@ namespace xiaoye97
                 try
                 {
                     ListGUI();
+                    GlobalMethod.setCameraMoveFlag(hscene.ctrlFlag.cameraCtrl, false);
                 }
                 catch (Exception e)
                 {
@@ -61,6 +62,34 @@ namespace xiaoye97
         public bool showOpenEye = true, showOpenMouth = true, showEyebrow = true, showEye = true, showMouth = true;
         public bool showNeckbehaviour, showEyebehaviour, showTargetNeck, showNeckRotA, showNeckRotB, showHeadRotA, showHeadRotB, showTargetEye, showEyeRotA, showEyeRotB;
         public static GlobalOverrideData nowOverrideData;
+        public static Dictionary<string, string> nameDict = new Dictionary<string, string>() {
+            { "openEye", "目開き"},
+            { "openMouth", "口開き" },
+            { "eyebrow", "眉" },
+            { "eye", "目形" },
+            { "mouth", "口舌形" },
+            { "Neckbehaviour", "首挙動" },
+            { "Eyebehaviour", "目挙動" },
+            { "targetNeck", "首タゲ" },
+            { "NeckRot", "首角度" },
+            { "HeadRot", "頭角度" },
+            { "targetEye", "目タゲ" },
+            { "EyeRot", "目角度" }
+        };
+        public static Dictionary<string, bool> boolDict = new Dictionary<string, bool>() {
+            { "openEye", true},
+            { "openMouth", true },
+            { "eyebrow", true },
+            { "eye", true },
+            { "mouth", true },
+            { "Neckbehaviour", false },
+            { "Eyebehaviour", false },
+            { "targetNeck", false },
+            { "NeckRot", false },
+            { "HeadRot", false },
+            { "targetEye", false },
+            { "EyeRot", false }
+        };
 
         void ListGUI()
         {
@@ -87,27 +116,20 @@ namespace xiaoye97
                 LoadMonoTextToNow();
             }
             GUILayout.EndHorizontal();
+            if (GUILayout.Button("重写载入配置文件", GUILayout.Width(300)))
+            {
+                TryLoadConfigCSVToNow(true);
+            }
             if (hscene.ctrlEyeNeckMale.Length > 0 && hscene.ctrlEyeNeckMale[0] != null)
             {
                 lst = Traverse.Create(hscene.ctrlEyeNeckMale[0]).Field("lstEyeNeck").GetValue<List<HMotionEyeNeckMale.EyeNeck>>();
                 if (lst != null)
                 {
                     GUILayout.BeginHorizontal();
-                    showOpenEye = GUILayout.Toggle(showOpenEye, "目開き");
-                    showOpenMouth = GUILayout.Toggle(showOpenMouth, "口開き");
-                    showEyebrow = GUILayout.Toggle(showEyebrow, "眉");
-                    showEye = GUILayout.Toggle(showEye, "目形");
-                    showMouth = GUILayout.Toggle(showMouth, "口舌形");
-                    showNeckbehaviour = GUILayout.Toggle(showNeckbehaviour, "首挙動");
-                    showEyebehaviour = GUILayout.Toggle(showEyebehaviour, "目挙動");
-                    showTargetNeck = GUILayout.Toggle(showTargetNeck, "首タゲ");
-                    showNeckRotA = GUILayout.Toggle(showNeckRotA, "首角度A");
-                    showNeckRotB = GUILayout.Toggle(showNeckRotB, "首角度B");
-                    showHeadRotA = GUILayout.Toggle(showHeadRotA, "頭角度A");
-                    showHeadRotB = GUILayout.Toggle(showHeadRotB, "頭角度B");
-                    showTargetEye = GUILayout.Toggle(showTargetEye, "目タゲ");
-                    showEyeRotA = GUILayout.Toggle(showEyeRotA, "目角度A");
-                    showEyeRotB = GUILayout.Toggle(showEyeRotB, "目角度B");
+                    foreach (string k in nameDict.Keys)
+                    {
+                        boolDict[k] = GUILayout.Toggle(boolDict[k], nameDict[k]);
+                    }
                     GUILayout.EndHorizontal();
                     if (lst.Count > 0)
                     {
@@ -116,21 +138,13 @@ namespace xiaoye97
                         {
                             GUILayout.BeginHorizontal();
                             GUILayout.Label($"{lst[i].anim}", GUILayout.Width(150));
-                            if (showOpenEye) GUITemplate1("目開き", "openEye", i);
-                            if (showOpenMouth) GUITemplate1("口開き", "openMouth", i);
-                            if (showEyebrow) GUITemplate1("眉", "eyebrow", i);
-                            if (showEye) GUITemplate1("目形", "eye", i);
-                            if (showMouth) GUITemplate1("口舌形", "mouth", i);
-                            if (showNeckbehaviour) GUITemplate1("首挙動", "Neckbehaviour", i);
-                            if (showEyebehaviour) GUITemplate1("目挙動", "Eyebehaviour", i);
-                            if (showTargetNeck) GUITemplate1("首タゲ", "targetNeck", i);
-                            if (showNeckRotA) GUITemplate2("首タゲA", "NeckRot", i, 0);
-                            if (showNeckRotB) GUITemplate2("首タゲB", "NeckRot", i, 1);
-                            if (showHeadRotA) GUITemplate2("頭角度A", "HeadRot", i, 0);
-                            if (showHeadRotB) GUITemplate2("頭角度B", "HeadRot", i, 1);
-                            if (showTargetEye) GUITemplate1("目タゲ", "targetEye", i);
-                            if (showEyeRotA) GUITemplate2("目角度A", "EyeRot", i, 0);
-                            if (showEyeRotB) GUITemplate2("目角度B", "EyeRot", i, 1);
+                            foreach (string k in nameDict.Keys)
+                            {
+                                if (boolDict[k])
+                                {
+                                    GUITemplate(k, i);
+                                }
+                            }
                             GUILayout.EndHorizontal();
                         }
                         GUILayout.EndScrollView();
@@ -139,24 +153,31 @@ namespace xiaoye97
             }
         }
 
-        List<HMotionEyeNeckMale.EyeNeck> lst;
+        public static List<HMotionEyeNeckMale.EyeNeck> lst;
 
-        /// <summary>
-        /// int数据模板
-        /// </summary>
-        void GUITemplate1(string label, string target, int index)
+        void GUITemplate(string target, int index)
+        {
+            object tmpData = typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).GetValue(lst[index]);
+            if (tmpData is int)
+            {
+                GUIIntT(target, index);
+            }
+            else //Vector3
+            {
+                GUIV3T(target, index);
+            }
+        }
+
+        void GUIIntT(string target, int index)
         {
             enTmp = lst[index];
             GUILayout.BeginHorizontal(GUILayout.Width(uiLabelWidth));
             int data = (int)typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).GetValue(enTmp);
-            GUILayout.Label($"{label} {data}");
+            GUILayout.Label($"{nameDict[target]} {data}");
             TypedReference r = __makeref(enTmp);
             if (GUILayout.Button("-", GUILayout.Width(20)))
             {
-                if (data > 0)
-                {
-                    typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).SetValueDirect(r, data - 1);
-                }
+                if (data > 0) typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).SetValueDirect(r, data - 1);
             }
             if (GUILayout.Button("+", GUILayout.Width(20)))
             {
@@ -167,32 +188,37 @@ namespace xiaoye97
             GUILayout.EndHorizontal();
         }
 
-        /// <summary>
-        /// Vector3数据模板
-        /// </summary>
-        void GUITemplate2(string label, string target, int index, int aorb)
+        void GUIV3T(string target, int index)
         {
             enTmp = lst[index];
-            Vector3 data = ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).GetValue(enTmp))[aorb];
+            //0
+            Vector3 data = ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).GetValue(enTmp))[0];
             TypedReference r = __makeref(enTmp);
             GUILayout.BeginHorizontal(GUILayout.Width(uiLabelWidth * 3));
-            GUILayout.Label($"{label}");
+            GUILayout.Label($"{nameDict[target]}A");
             GUILayout.Label($"x{data.x}", GUILayout.Width(uiLabelWidth2));
             var x = GUILayout.HorizontalSlider(data.x, 0, 360, GUILayout.Width(uiSliderWidth));
             GUILayout.Label($"y{data.y}", GUILayout.Width(uiLabelWidth2));
             var y = GUILayout.HorizontalSlider(data.y, 0, 360, GUILayout.Width(uiSliderWidth));
             GUILayout.Label($"z{data.z}", GUILayout.Width(uiLabelWidth2));
             var z = GUILayout.HorizontalSlider(data.z, 0, 360, GUILayout.Width(uiSliderWidth));
-            Vector3[] values = null;
-            switch (aorb)
-            {
-                case 0:
-                    values = new Vector3[] { new Vector3(x, y, z), ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).GetValue(enTmp))[1] };
-                    break;
-                case 1:
-                    values = new Vector3[] { ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).GetValue(enTmp))[0], new Vector3(x, y, z) };
-                    break;
-            }
+            Vector3[] values = new Vector3[] { new Vector3(x, y, z), ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).GetValue(enTmp))[1] };
+            typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).SetValueDirect(r, values);
+            lst[index] = enTmp;
+            GUILayout.Label("", GUILayout.ExpandWidth(true));
+            GUILayout.EndHorizontal();
+            //1
+            data = ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).GetValue(enTmp))[1];
+            r = __makeref(enTmp);
+            GUILayout.BeginHorizontal(GUILayout.Width(uiLabelWidth * 3));
+            GUILayout.Label($"{nameDict[target]}B");
+            GUILayout.Label($"x{data.x}", GUILayout.Width(uiLabelWidth2));
+            x = GUILayout.HorizontalSlider(data.x, 0, 360, GUILayout.Width(uiSliderWidth));
+            GUILayout.Label($"y{data.y}", GUILayout.Width(uiLabelWidth2));
+            y = GUILayout.HorizontalSlider(data.y, 0, 360, GUILayout.Width(uiSliderWidth));
+            GUILayout.Label($"z{data.z}", GUILayout.Width(uiLabelWidth2));
+            z = GUILayout.HorizontalSlider(data.z, 0, 360, GUILayout.Width(uiSliderWidth));
+            values = new Vector3[] { ((Vector3[])typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).GetValue(enTmp))[0], new Vector3(x, y, z) };
             typeof(HMotionEyeNeckMale.EyeNeck).GetField(target).SetValueDirect(r, values);
             lst[index] = enTmp;
             GUILayout.Label("", GUILayout.ExpandWidth(true));
@@ -272,6 +298,7 @@ namespace xiaoye97
                         lst[i - 1] = ParseEyeNeckFromValues(vs);
                     }
                 }
+                OverrideData();
             }
         }
 
@@ -348,6 +375,7 @@ namespace xiaoye97
                         lst[i - 3] = ParseEyeNeckFromValues(vs);
                     }
                 }
+                OverrideData();
             }
         }
 
@@ -384,7 +412,7 @@ namespace xiaoye97
             openFileName.title = "选择文件";
             openFileName.flags = 0x00080000 | 0x00001000 | 0x00000800 | 0x00000008;
 
-            if (LocalDialog.GetSaveFileName(openFileName))//点击系统对话框框保存按钮
+            if (LocalDialog.GetOpenFileName(openFileName))//点击系统对话框框保存按钮
             {
                 var content = File.ReadAllLines(openFileName.file);
                 return content;
@@ -398,9 +426,93 @@ namespace xiaoye97
             if (Input.GetKeyDown(KeyCode.F10))
             {
                 windowShow = !windowShow;
+                if (hscene)
+                {
+                    if (windowShow) GlobalMethod.setCameraMoveFlag(hscene.ctrlFlag.cameraCtrl, false);
+                    else GlobalMethod.setCameraMoveFlag(hscene.ctrlFlag.cameraCtrl, true);
+                }
             }
         }
 
+        public static void OverrideData()
+        {
+            if (lst != null)
+            {
+                for (int i = 0; i < lst.Count; i++)
+                {
+                    MaleNeckData n = new MaleNeckData(lst[i]);
+                    lst[i] = nowOverrideData.OverrideMaleNeckData(n).ToEyeNeck();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 尝试读取配置到当前表情
+        /// </summary>
+        /// <returns></returns>
+        public static bool TryLoadConfigCSVToNow(bool refresh, HMotionEyeNeckMale male = null)
+        {
+            if (Directory.Exists($"{Paths.PluginPath}/AIMaleExpression/"))
+            {
+                string[] vs = null;
+                //先加载全局重写CSV
+                LoadOverrideData();
+                List<HMotionEyeNeckMale.EyeNeck> list = null;
+                if (refresh) list = lst;
+                else list = Traverse.Create(male).Field("lstEyeNeck").GetValue<List<HMotionEyeNeckMale.EyeNeck>>();
+                //尝试加载姿势CSV
+                if (File.Exists($"{Paths.PluginPath}/AIMaleExpression/{nowList}.csv"))
+                {
+                    var lines = File.ReadAllLines($"{Paths.PluginPath}/AIMaleExpression/{nowList}.csv");
+                    if (lines != null)
+                    {
+                        if (!refresh) list.Clear();
+                        for (int i = 1; i < lines.Length; i++)
+                        {
+                            if (!string.IsNullOrEmpty(lines[i]))
+                            {
+                                vs = lines[i].Split(',');
+                                if (refresh) lst[i - 1] = ParseEyeNeckFromValues(vs);
+                                else list.Add(ParseEyeNeckFromValues(vs));
+                            }
+                        }
+                    }
+                    if (refresh) OverrideData();
+                    Debug.Log("男性表情插件:已读取插件配置覆盖原表情数据");
+                    return true;
+                }
+                //尝试加载MonoBehaviour文本
+                else if (File.Exists($"{Paths.PluginPath}/AIMaleExpression/{nowList}.MonoBehaviour"))
+                {
+                    var lines = File.ReadAllLines($"{Paths.PluginPath}/AIMaleExpression/{nowList}.csv");
+                    if (lines != null)
+                    {
+                        if (!refresh) list.Clear();
+                        for (int i = 3; i < lines.Length; i++)
+                        {
+                            if (!string.IsNullOrEmpty(lines[i]))
+                            {
+                                string line = lines[i].Replace("><", ",");
+                                line = line.Replace("<", "");
+                                line = line.Replace(">", "");
+                                vs = line.Split(',');
+                                if (refresh) lst[i - 3] = ParseEyeNeckFromValues(vs);
+                                else list.Add(ParseEyeNeckFromValues(vs));
+                            }
+                        }
+                    }
+                    if (refresh) OverrideData();
+                    Debug.Log("男性表情插件:已读取插件配置覆盖原表情数据");
+                    return true;
+                }
+                if (refresh) OverrideData();
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 加载啪啪啪动作前补丁
+        /// </summary>
         [HarmonyPatch(typeof(HMotionEyeNeckMale), "Load")]
         class HPatch
         {
@@ -409,57 +521,17 @@ namespace xiaoye97
                 Debug.Log($"男性表情:加载AB资源 路径:{_assetpath} 名称:{_file}");
                 nowABPath = _assetpath;
                 nowList = _file;
-                if (Directory.Exists($"{Paths.PluginPath}/AIMaleExpression/"))
+                if (TryLoadConfigCSVToNow(false, __instance))
                 {
-                    string[] vs = null;
-                    //先加载全局重写CSV
-                    LoadOverrideData();
-                    //尝试加载体位CSV
-                    if (File.Exists($"{Paths.PluginPath}/AIMaleExpression/{_file}.csv"))
-                    {
-                        var lines = File.ReadAllLines($"{Paths.PluginPath}/AIMaleExpression/{_file}.csv");
-                        if (lines != null)
-                        {
-                            for (int i = 1; i < lines.Length; i++)
-                            {
-                                if (!string.IsNullOrEmpty(lines[i]))
-                                {
-                                    vs = lines[i].Split(',');
-                                    var lst = Traverse.Create(__instance).Field("lstEyeNeck").GetValue<List<HMotionEyeNeckMale.EyeNeck>>();
-                                    lst.Add(ParseEyeNeckFromValues(vs));
-                                }
-                            }
-                        }
-                        Debug.Log("男性表情插件:已读取插件配置覆盖原表情数据");
-                        return false;
-                    }
-                    //尝试加载MonoBehaviour文本
-                    else if (File.Exists($"{Paths.PluginPath}/AIMaleExpression/{_file}.MonoBehaviour"))
-                    {
-                        var lines = File.ReadAllLines($"{Paths.PluginPath}/AIMaleExpression/{_file}.csv");
-                        if (lines != null)
-                        {
-                            for (int i = 3; i < lines.Length; i++)
-                            {
-                                if (!string.IsNullOrEmpty(lines[i]))
-                                {
-                                    string line = lines[i].Replace("><", ",");
-                                    line = line.Replace("<", "");
-                                    line = line.Replace(">", "");
-                                    vs = line.Split(',');
-                                    var lst = Traverse.Create(__instance).Field("lstEyeNeck").GetValue<List<HMotionEyeNeckMale.EyeNeck>>();
-                                    lst.Add(ParseEyeNeckFromValues(vs));
-                                }
-                            }
-                        }
-                        Debug.Log("男性表情插件:已读取插件配置覆盖原表情数据");
-                        return false;
-                    }
+                    return false;
                 }
                 return true;
             }
         }
 
+        /// <summary>
+        /// 加载啪啪啪动作后补丁
+        /// </summary>
         [HarmonyPatch(typeof(HMotionEyeNeckMale), "Load")]
         class OverrideDataPatch
         {
@@ -481,6 +553,9 @@ namespace xiaoye97
             }
         }
 
+        /// <summary>
+        /// 切换动画时补丁
+        /// </summary>
         [HarmonyPatch(typeof(ChaControl), "setPlay")]
         class HAnimPatch
         {
@@ -744,53 +819,4 @@ namespace xiaoye97
             }
         }
     }
-
-    #region 文件选择框
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    public class OpenFileName
-    {
-        public int structSize = 0;
-        public IntPtr dlgOwner = IntPtr.Zero;
-        public IntPtr instance = IntPtr.Zero;
-        public String filter = null;
-        public String customFilter = null;
-        public int maxCustFilter = 0;
-        public int filterIndex = 0;
-        public String file = null;
-        public int maxFile = 0;
-        public String fileTitle = null;
-        public int maxFileTitle = 0;
-        public String initialDir = null;
-        public String title = null;
-        public int flags = 0;
-        public short fileOffset = 0;
-        public short fileExtension = 0;
-        public String defExt = null;
-        public IntPtr custData = IntPtr.Zero;
-        public IntPtr hook = IntPtr.Zero;
-        public String templateName = null;
-        public IntPtr reservedPtr = IntPtr.Zero;
-        public int reservedInt = 0;
-        public int flagsEx = 0;
-    }
-
-    public class LocalDialog
-    {
-        //链接指定系统函数       打开文件对话框
-        [DllImport("Comdlg32.dll", SetLastError = true, ThrowOnUnmappableChar = true, CharSet = CharSet.Auto)]
-        public static extern bool GetOpenFileName([In, Out] OpenFileName ofn);
-        public static bool GetOFN([In, Out] OpenFileName ofn)
-        {
-            return GetOpenFileName(ofn);//执行打开文件的操作
-        }
-
-        //链接指定系统函数        另存为对话框
-        [DllImport("Comdlg32.dll", SetLastError = true, ThrowOnUnmappableChar = true, CharSet = CharSet.Auto)]
-        public static extern bool GetSaveFileName([In, Out] OpenFileName ofn);
-        public static bool GetSFN([In, Out] OpenFileName ofn)
-        {
-            return GetSaveFileName(ofn);//执行保存选中文件的操作
-        }
-    }
-    #endregion
 }
