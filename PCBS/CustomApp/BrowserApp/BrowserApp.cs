@@ -15,6 +15,11 @@ namespace xiaoye97
 
         void Awake()
         {
+            DirectoryInfo directoryInfo = new DirectoryInfo(Application.streamingAssetsPath + "\\Cookies");
+			if (!directoryInfo.Exists)
+                directoryInfo.Create();
+			if (string.IsNullOrEmpty(BrowserNative.ProfilePath))
+                BrowserNative.ProfilePath = directoryInfo.FullName;
             browser.onNavStateChange += () => inputField.text = browser.Url;
         }
 
