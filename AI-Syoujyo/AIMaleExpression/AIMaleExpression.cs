@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 
 namespace xiaoye97
 {
-    [BepInPlugin("me.xiaoye97.plugin.AIMaleExpression", "AI少女男性H表情辅助插件", "1.5")]
+    [BepInPlugin("me.xiaoye97.plugin.AIMaleExpression", "AI少女男性H表情辅助插件", "1.6")]
     public class AIMaleExpression : BaseUnityPlugin
     {
         private static HScene hscene;
@@ -388,12 +388,9 @@ namespace xiaoye97
         public static Vector3 ParseV3(string x, string y, string z)
         {
             Vector3 v = Vector3.zero;
-            if (string.IsNullOrEmpty(x)) v.x = 0;
-            else v.x = float.Parse(x);
-            if (string.IsNullOrEmpty(y)) v.y = 0;
-            else v.x = float.Parse(y);
-            if (string.IsNullOrEmpty(z)) v.z = 0;
-            else v.x = float.Parse(z);
+            float.TryParse(x, out v.x);
+            float.TryParse(y, out v.y);
+            float.TryParse(z, out v.z);
             return v;
         }
         /// <summary>
@@ -629,7 +626,6 @@ namespace xiaoye97
             {
                 //Debug.Log("男性表情插件:开始解析 " + line);
                 string[] vs = line.Split(',');
-                Vector3[] v;
                 anim = vs[0];
                 //Debug.Log($"男性表情插件:读取到动画{anim}的配置");
                 string[] ls = vs[1].Split('|');
@@ -679,18 +675,12 @@ namespace xiaoye97
                 }
                 if (!string.IsNullOrEmpty(vs[10]))
                 {
-                    v = new Vector3[] { Vector3.zero, Vector3.zero };
-                    v[0] = ParseV3(vs[10], vs[11], vs[12]);
-                    v[1] = ParseV3(vs[13], vs[14], vs[15]);
-                    NeckRot = v;
+                    NeckRot = new Vector3[] { ParseV3(vs[10], vs[11], vs[12]), ParseV3(vs[13], vs[14], vs[15]) };
                     bNeckRot = true;
                 }
                 if (!string.IsNullOrEmpty(vs[16]))
                 {
-                    v = new Vector3[] { Vector3.zero, Vector3.zero };
-                    v[0] = ParseV3(vs[16], vs[17], vs[18]);
-                    v[1] = ParseV3(vs[19], vs[20], vs[21]);
-                    HeadRot = v;
+                    HeadRot = new Vector3[] { ParseV3(vs[16], vs[17], vs[18]), ParseV3(vs[19], vs[20], vs[21]) };
                     bHeadRot = true;
                 }
                 if (!string.IsNullOrEmpty(vs[22]))
@@ -700,10 +690,7 @@ namespace xiaoye97
                 }
                 if (!string.IsNullOrEmpty(vs[23]))
                 {
-                    v = new Vector3[] { Vector3.zero, Vector3.zero };
-                    v[0] = ParseV3(vs[23], vs[24], vs[25]);
-                    v[1] = ParseV3(vs[26], vs[27], vs[28]);
-                    EyeRot = v;
+                    EyeRot = new Vector3[] { ParseV3(vs[23], vs[24], vs[25]), ParseV3(vs[26], vs[27], vs[28]) };
                     bEyeRot = true;
                 }
             }
@@ -773,7 +760,6 @@ namespace xiaoye97
             //从list的csv行数据中构造
             public MaleNeckData(string[] vs)
             {
-                Vector3[] v;
                 anim = vs[0];
                 openEye = int.Parse(vs[1]);
                 openMouth = int.Parse(vs[2]);
@@ -783,19 +769,10 @@ namespace xiaoye97
                 Neckbehaviour = int.Parse(vs[6]);
                 Eyebehaviour = int.Parse(vs[7]);
                 targetNeck = int.Parse(vs[8]);
-                v = new Vector3[] { Vector3.zero, Vector3.zero };
-                v[0] = ParseV3(vs[9], vs[10], vs[11]);
-                v[1] = ParseV3(vs[12], vs[13], vs[14]);
-                NeckRot = v;
-                v = new Vector3[] { Vector3.zero, Vector3.zero };
-                v[0] = ParseV3(vs[15], vs[16], vs[17]);
-                v[1] = ParseV3(vs[18], vs[19], vs[20]);
-                HeadRot = v;
+                NeckRot = new Vector3[] { ParseV3(vs[9], vs[10], vs[11]), ParseV3(vs[12], vs[13], vs[14]) };
+                HeadRot = new Vector3[] { ParseV3(vs[15], vs[16], vs[17]), ParseV3(vs[18], vs[19], vs[20]) };
                 targetEye = int.Parse(vs[21]);
-                v = new Vector3[] { Vector3.zero, Vector3.zero };
-                v[0] = ParseV3(vs[22], vs[23], vs[24]);
-                v[1] = ParseV3(vs[25], vs[26], vs[27]);
-                EyeRot = v;
+                EyeRot = new Vector3[] { ParseV3(vs[22], vs[23], vs[24]), ParseV3(vs[25], vs[26], vs[27]) };
             }
 
             //转换为原版表情
