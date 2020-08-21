@@ -13,6 +13,7 @@ using RuntimeUnityEditor.Core.Inspector.Entries;
 namespace RuntimeUnityEditorAddion
 {
     [BepInPlugin("me.xiaoye97.plugin.Unity.RuntimeUnityEditorAddion", "运行时Unity编辑器扩展", "1.1")]
+    [BepInDependency("RuntimeUnityEditor", BepInDependency.DependencyFlags.HardDependency)]
     public class RuntimeUnityEditorAddion : BaseUnityPlugin
     {
         public static ConfigEntry<bool> filterUnload, disableSort, showColor;
