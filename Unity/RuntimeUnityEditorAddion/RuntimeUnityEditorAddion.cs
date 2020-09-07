@@ -12,16 +12,17 @@ using RuntimeUnityEditor.Core.Inspector.Entries;
 
 namespace RuntimeUnityEditorAddion
 {
-    [BepInPlugin("me.xiaoye97.plugin.Unity.RuntimeUnityEditorAddion", "运行时Unity编辑器扩展", "1.1")]
+    [BepInPlugin("me.xiaoye97.plugin.Unity.RuntimeUnityEditorAddion", "运行时Unity编辑器扩展", "1.2")]
     [BepInDependency("RuntimeUnityEditor", BepInDependency.DependencyFlags.HardDependency)]
     public class RuntimeUnityEditorAddion : BaseUnityPlugin
     {
-        public static ConfigEntry<bool> filterUnload, disableSort, showColor;
+        public static ConfigEntry<bool> filterUnload, disableSort, showColor, showTexture;
         void Start()
         {
             filterUnload = Config.Bind<bool>("Setting", "Filter Unload", true);
             disableSort = Config.Bind<bool>("Setting", "Diasble Sort", true);
             showColor = Config.Bind<bool>("Setting", "Show Color", true);
+            showTexture = Config.Bind<bool>("Setting", "Show Texture", true);
             new Harmony("me.xiaoye97.plugin.Unity.RuntimeUnityEditorAddion").PatchAll();
         }
 
@@ -85,38 +86,97 @@ namespace RuntimeUnityEditorAddion
         }
         #endregion
 
-        #region 显示颜色
+        #region 显示颜色&显示贴图
         public static Color cacheColor, backColor;
-        private static bool startShowColor = false;
+        public static Texture2D cacheTexture;
+        private static bool startShowColor = false, startShowTexture = false;
+        public static RenderTexture cacheRenderTexture;
         [HarmonyPatch(typeof(Inspector), "DrawSingleContentEntry")]
-        class ColorPatch
+        class InspectorPatch
         {
             public static bool Prefix(ICacheEntry entry)
             {
-                if (entry.TypeName() != "UnityEngine.Color") return true;
+                switch(entry.TypeName())
+                {
+                    case "UnityEngine.Color":
+                        ColorFix(entry);
+                        break;
+                    case "UnityEngine.Texture2D":
+                        Texture2DFix(entry);
+                        break;
+                    case "UnityEngine.Sprite":
+                        SpriteFix(entry);
+                        break;
+                    default: 
+                        break;
+                }
+                return true;
+            }
+
+            public static void ColorFix(ICacheEntry entry)
+            {
                 cacheColor = (Color)entry.GetValue();
                 backColor = GUI.contentColor;
                 startShowColor = true;
-                return true;
+            }
+
+            public static void Texture2DFix(ICacheEntry entry)
+            {
+                cacheTexture = (Texture2D)entry.GetValue();
+                if(cacheTexture != null)
+                {
+                    startShowTexture = true;
+                }
+            }
+
+            public static void SpriteFix(ICacheEntry entry)
+            {
+                Sprite sprite = (Sprite)entry.GetValue();
+                if(sprite != null)
+                {
+                    cacheTexture = sprite.texture;
+                    if (cacheTexture != null)
+                    {
+                        startShowTexture = true;
+                    }
+                }
             }
         }
 
         [HarmonyPatch(typeof(GUILayout), "Label", new Type[] {typeof(string), typeof(GUILayoutOption[]) })]
-        class ColorPatch2
+        class InspectorPatch2
         {
             public static bool Prefix(ref GUILayoutOption[] options)
             {
-                if (!showColor.Value) return true;
-                if (!startShowColor) return true;
-                startShowColor = false;
-                GUI.contentColor = cacheColor;
-                GUILayout.Label("██", GUILayout.Width(18));
-                options = new GUILayoutOption[]
+                if(showColor.Value)
                 {
-                    GUILayout.Width(148f),
-                    GUILayout.MaxWidth(148f)
-                };
-                GUI.contentColor = backColor;
+                    if(startShowColor)
+                    {
+                        startShowColor = false;
+                        GUI.contentColor = cacheColor;
+                        GUILayout.Label("██", GUILayout.Width(18));
+                        options = new GUILayoutOption[]
+                        {
+                            GUILayout.Width(148f),
+                            GUILayout.MaxWidth(148f)
+                        };
+                        GUI.contentColor = backColor;
+                    }
+                }
+
+                if(showTexture.Value)
+                {
+                    if(startShowTexture)
+                    {
+                        startShowTexture = false;
+                        GUILayout.Label(cacheTexture, GUILayout.Width(48), GUILayout.Height(48));
+                        options = new GUILayoutOption[]
+                        {
+                            GUILayout.Width(118f),
+                            GUILayout.MaxWidth(118f)
+                        };
+                    }
+                }
                 return true;
             }
         }
