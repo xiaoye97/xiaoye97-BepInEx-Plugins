@@ -12,7 +12,7 @@ using RuntimeUnityEditor.Core.Inspector.Entries;
 
 namespace RuntimeUnityEditorAddion
 {
-    [BepInPlugin("me.xiaoye97.plugin.Unity.RuntimeUnityEditorAddion", "运行时Unity编辑器扩展", "1.2")]
+    [BepInPlugin("me.xiaoye97.plugin.Unity.RuntimeUnityEditorAddion", "运行时Unity编辑器扩展", "1.3")]
     [BepInDependency("RuntimeUnityEditor", BepInDependency.DependencyFlags.HardDependency)]
     public class RuntimeUnityEditorAddion : BaseUnityPlugin
     {
@@ -86,7 +86,7 @@ namespace RuntimeUnityEditorAddion
         }
         #endregion
 
-        #region 显示颜色&显示贴图
+        #region 显示颜色&显示贴图&显示bool
         public static Color cacheColor, backColor;
         public static Texture2D cacheTexture;
         private static bool startShowColor = false, startShowTexture = false;
@@ -176,6 +176,23 @@ namespace RuntimeUnityEditorAddion
                             GUILayout.MaxWidth(118f)
                         };
                     }
+                }
+                return true;
+            }
+        }
+
+        [HarmonyPatch(typeof(Inspector), "DrawEditableValue")]
+        class InspectorPatch3
+        {
+            public static bool Prefix(ICacheEntry field, object value)
+            {
+                if(field.TypeName() == "System.Boolean")
+                {
+                    if ((bool)value != GUILayout.Toggle((bool)value, ToStringConverter.GetEditValue(field, value)))
+                    {
+                        field.SetValue(!(bool)value);
+                    }
+                    return false;
                 }
                 return true;
             }
