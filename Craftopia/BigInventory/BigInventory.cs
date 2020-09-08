@@ -1,36 +1,40 @@
-﻿using System;
+﻿using Oc;
 using BepInEx;
-using Oc.Item;
 using Oc.Item.UI;
-using System.Collections.Generic;
+using HarmonyLib;
 
 namespace BigInventory
 {
-    [BepInPlugin("me.xiaoye97.plugin.Craftopia.BigInventory", "大背包", "1.0")]
+    [BepInPlugin("me.xiaoye97.plugin.Craftopia.BigInventory", "大背包", "1.1")]
     public class BigInventory : BaseUnityPlugin
     {
-        public static bool finished = false;
+		public static int InventorySize = 64;
 
-        void Update()
+		void Start()
         {
-            if (finished) return;
-			if (SingletonMonoBehaviour<OcItemUI_InventoryMng>.Inst != null)
+			new Harmony("me.xiaoye97.plugin.Craftopia.BigInventory").PatchAll();
+        }
+
+		[HarmonyPatch(typeof(OcGameMng), "OnGameSceneSetUpFinish")]
+		class InventoryPatch
+        {
+			public static void Postfix()
+            {
+				FixInventory();
+			}
+        }
+
+		public static void FixInventory()
+		{
+			var inst = SingletonMonoBehaviour<OcItemUI_InventoryMng>.Inst;
+			if (inst != null)
 			{
-				finished = true;
-				OcItemUI_InventoryMng inst = SingletonMonoBehaviour<OcItemUI_InventoryMng>.Inst;
-				List<OcItemUI_Cell_List> list = new List<OcItemUI_Cell_List>();
-				foreach (OcItemStack stack in inst.GetStacksNotNull(true))
-				{
-					list.Add(inst.GetBelongList(stack));
-				}
-				for (int i = 0; i < list.Count; i++)
-				{
-					if (list[i] != null && list[i].Size != 64)
-					{
-						list[i].SetSize(64);
-					}
-				}
+				Traverse.Create(inst).Field("equipmentList").Method("SetSize", 64).GetValue();
+				Traverse.Create(inst).Field("consumptionList").Method("SetSize", 64).GetValue();
+				Traverse.Create(inst).Field("materialList").Method("SetSize", 64).GetValue();
+				Traverse.Create(inst).Field("relicList").Method("SetSize", 64).GetValue();
+				Traverse.Create(inst).Field("buildingList").Method("SetSize", 64).GetValue();
 			}
 		}
-    }
+	}
 }
