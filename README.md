@@ -6,6 +6,9 @@
 #### Unity通用插件
 - RuntimeUnityEditorAddion运行时编辑器扩展
 
+#### Craftopia创世理想乡
+- BigInventory大背包
+
 #### 装机模拟器
 - 自定义App(附带浏览器APP)
 - 自定义模型
