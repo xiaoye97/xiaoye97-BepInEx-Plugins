@@ -29,11 +29,11 @@ namespace BigInventory
             var inst = SingletonMonoBehaviour<OcItemUI_InventoryMng>.Inst;
             if (inst != null)
             {
-                Traverse.Create(inst).Field("equipmentList").Method("SetSize", 64).GetValue();
-                Traverse.Create(inst).Field("consumptionList").Method("SetSize", 64).GetValue();
-                Traverse.Create(inst).Field("materialList").Method("SetSize", 64).GetValue();
-                Traverse.Create(inst).Field("relicList").Method("SetSize", 64).GetValue();
-                Traverse.Create(inst).Field("buildingList").Method("SetSize", 64).GetValue();
+                Traverse.Create(inst).Field("equipmentList").Method("SetSize", InventorySize).GetValue();
+                Traverse.Create(inst).Field("consumptionList").Method("SetSize", InventorySize).GetValue();
+                Traverse.Create(inst).Field("materialList").Method("SetSize", InventorySize).GetValue();
+                Traverse.Create(inst).Field("relicList").Method("SetSize", InventorySize).GetValue();
+                Traverse.Create(inst).Field("buildingList").Method("SetSize", InventorySize).GetValue();
             }
         }
     }
