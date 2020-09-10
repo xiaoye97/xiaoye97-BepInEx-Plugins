@@ -9,6 +9,7 @@
 #### Craftopia创世理想乡
 - BigInventory大背包
 - UndergroundPicker自动回收掉进地下的建筑
+- MoreSkillPoints更多技能点 - 升级时获得2个技能点而不是1个
 
 #### 装机模拟器
 - 自定义App(附带浏览器APP)
