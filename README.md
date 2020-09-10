@@ -8,6 +8,7 @@
 
 #### Craftopia创世理想乡
 - BigInventory大背包
+- UndergroundPicker自动回收掉进地下的建筑
 
 #### 装机模拟器
 - 自定义App(附带浏览器APP)
