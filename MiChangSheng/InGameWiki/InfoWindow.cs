@@ -13,6 +13,7 @@ namespace InGameWiki
                 showInfo = value;
             }
         }
+
         static Rect winRect = new Rect((Screen.width - 200) / 2, (Screen.height - 100) / 2, 200, 100);
 
         public static void OnGUI()
@@ -30,7 +31,7 @@ namespace InGameWiki
                 ShowInfo = false;
             }
             GUILayout.Label("插件名:游戏百科");
-            GUILayout.Label("版本:1.0");
+            GUILayout.Label("版本:1.1");
             GUILayout.Label("作者:xiaoye97");
             GUILayout.Label("Github:xiaoye97");
             GUILayout.Label("哔哩哔哩:宵夜97");

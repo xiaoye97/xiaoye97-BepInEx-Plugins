@@ -1,4 +1,5 @@
 ﻿using System;
+using GUIPackage;
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -13,6 +14,7 @@ namespace InGameWiki
         static List<KeyValuePair<string, JSONObject>> ItemList = new List<KeyValuePair<string, JSONObject>>();
         static Vector2 svPos;
         public static JSONObject SelectItem;
+        public static item TooltipItem;
 
         /// <summary>
         /// 物品是否为目标品质
@@ -52,7 +54,7 @@ namespace InGameWiki
             bool result = true;
             foreach (var search in searchs)
             {
-                if (!itemdata["name"].str.UnCode64().Contains(search) && !itemdata["desc"].str.UnCode64().Contains(search) && !itemdata["id"].I.ToString().Contains(search))
+                if (!itemdata["name"].str.UnCode64().Contains(search) && !itemdata["desc"].str.UnCode64().Contains(search) && !itemdata["desc2"].str.UnCode64().Contains(search) && !itemdata["id"].I.ToString().Contains(search))
                 {
                     result = false;
                 }
@@ -107,10 +109,6 @@ namespace InGameWiki
             if (nowPage >= maxPage) nowPage = 0;
             tmpPage = 0;
             tmpShow = 0;
-            if (GUILayout.Button("关于", GUILayout.Width(80)))
-            {
-                InfoWindow.ShowInfo = true;
-            }
             GUILayout.EndHorizontal();
             #endregion
 

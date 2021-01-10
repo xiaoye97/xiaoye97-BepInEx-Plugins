@@ -47,6 +47,7 @@ namespace InGameWiki
             if (GUILayout.Button("采药收益")) Json = jsonData.instance.CaiYaoShoYi;
             if (GUILayout.Button("材料能量表")) Json = jsonData.instance.CaiLiaoNengLiangBiao;
             if (GUILayout.Button("支路随机采集")) Json = jsonData.instance.AllMapCaiJiBiao;
+            if (GUILayout.Button("Buff")) Json = jsonData.instance._BuffJsonData;
             GUILayout.EndScrollView();
 
             jsonPos = GUILayout.BeginScrollView(jsonPos, GUI.skin.box, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
