@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using HarmonyLib;
 using UnityEngine;
 using MCSDataHelper;
 using System.Collections;
@@ -55,6 +56,7 @@ namespace RollSystem
             Tticket2 = DataHelper.GetTex($"Mods/RollSystemMod/Texture/RaffleTticket2.png");
             Tticket3 = DataHelper.GetTex($"Mods/RollSystemMod/Texture/RaffleTticket3.png");
             NowSay = SayConents[0];
+            Harmony.CreateAndPatchAll(typeof(RollSystem));
         }
 
         void Update()
@@ -77,6 +79,19 @@ namespace RollSystem
                 winRect = GUILayout.Window(7777777, winRect, WindowFunc, "超级抽奖系统");
                 GUI.backgroundColor = Color.white;
             }
+        }
+
+        [HarmonyPrefix, HarmonyPatch(typeof(KBEngine.Avatar), "AddTime")]
+        public static bool AddTimePatch(KBEngine.Avatar __instance,int addday, int addMonth, int Addyear)
+        {
+            System.DateTime nowTime = __instance.worldTimeMag.getNowTime();
+            System.DateTime dateTime = nowTime.AddYears(Addyear).AddMonths(addMonth).AddDays(addday);
+            int year = dateTime.Year - nowTime.Year;
+            if(year > 0)
+            {
+                Tools.instance.getPlayer().addItem(110001, null, year);
+            }
+            return true;
         }
 
         void WindowFunc(int id)
