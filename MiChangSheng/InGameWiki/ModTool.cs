@@ -2,6 +2,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using MCSDataHelper;
 
 namespace InGameWiki
 {
@@ -52,6 +53,10 @@ namespace InGameWiki
             if (icon == null)
             {
                 icon = Resources.Load<Texture2D>("Item Icon/1");
+            }
+            if(item.HasField("ModIcon"))
+            {
+                icon = DataHelper.GetTex(item["ModIcon"].str);
             }
             return icon;
         }

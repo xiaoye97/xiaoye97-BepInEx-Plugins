@@ -4,9 +4,9 @@ using System.Collections.Generic;
 
 namespace InGameWiki
 {
-    public static class BuffWindow
+    public static class SkillWindow
     {
-        public static bool ShowBuff;
+        public static bool ShowSkill;
         static Rect winRect = new Rect((Screen.width - 1200) / 2, (Screen.height - 700) / 2, 1200, 700);
         static Vector2 svPos;
         static int nowPage, maxPage, tmpPage, tmpShow;
@@ -18,10 +18,10 @@ namespace InGameWiki
 
         public static void Init()
         {
-            JSONObject buffs = jsonData.instance._BuffJsonData;
+            JSONObject buffs = jsonData.instance._skillJsonData;
             foreach (var buff in buffs.list)
             {
-                idList.Add(buff["buffid"].I);
+                idList.Add(buff["id"].I);
                 nameList.Add(buff["name"].str.UnCode64());
                 descList.Add(buff["descr"].str.UnCode64());
             }
@@ -29,9 +29,9 @@ namespace InGameWiki
 
         public static void OnGUI()
         {
-            if (ShowBuff)
+            if (ShowSkill)
             {
-                winRect = GUILayout.Window(667, winRect, WindowFunc, "游戏百科·Buff数据表");
+                winRect = GUILayout.Window(667, winRect, WindowFunc, "游戏百科·技能数据表");
             }
         }
 
@@ -55,7 +55,7 @@ namespace InGameWiki
             showList.Clear();
             if (string.IsNullOrWhiteSpace(searchStr))
             {
-                for(int i = 0; i < idList.Count; i++)
+                for (int i = 0; i < idList.Count; i++)
                 {
                     showList.Add(i);
                 }
@@ -90,10 +90,10 @@ namespace InGameWiki
             tmpPage = 0;
             tmpShow = 0;
             GUILayout.Label(" ");
-            if (GUILayout.Button("关闭", GUILayout.Width(80))) ShowBuff = false;
+            if (GUILayout.Button("关闭", GUILayout.Width(80))) ShowSkill = false;
             GUILayout.EndHorizontal();
             svPos = GUILayout.BeginScrollView(svPos, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
-            
+
             foreach (var buff in showList)
             {
                 if (tmpPage < nowPage * 30)
@@ -103,7 +103,7 @@ namespace InGameWiki
                 }
                 tmpShow++;
                 GUILayout.BeginHorizontal(GUI.skin.box);
-                GUILayout.Label($"buffid: {idList[buff]}", GUILayout.Width(90));
+                GUILayout.Label($"skillid: {idList[buff]}", GUILayout.Width(90));
                 GUILayout.Label($"名字: {nameList[buff]}", GUILayout.Width(180));
                 GUILayout.Label($"描述: {descList[buff]}");
                 GUILayout.EndHorizontal();

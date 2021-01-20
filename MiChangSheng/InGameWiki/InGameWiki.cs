@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace InGameWiki
 {
-    [BepInPlugin("me.xiaoye97.plugin.MiChangSheng.InGameWiki", "游戏百科", "1.1")]
+    [BepInPlugin("me.xiaoye97.plugin.MiChangSheng.InGameWiki", "游戏百科", "1.2")]
     public class InGameWiki : BaseUnityPlugin
     {
         ConfigEntry<KeyCode> HotKey, CheckKey;
@@ -69,6 +69,10 @@ namespace InGameWiki
             {
                 BuffWindow.OnGUI();
             }
+            if (SkillWindow.ShowSkill)
+            {
+                SkillWindow.OnGUI();
+            }
         }
 
         void WindowFunc(int id)
@@ -83,6 +87,11 @@ namespace InGameWiki
             {
                 IsShow = false;
                 BuffWindow.ShowBuff = true;
+            }
+            if (GUILayout.Button("技能数据表", GUILayout.Width(100)))
+            {
+                IsShow = false;
+                SkillWindow.ShowSkill = true;
             }
             GUILayout.Label(" ");
             if (GUILayout.Button("关闭", GUILayout.Width(80)))

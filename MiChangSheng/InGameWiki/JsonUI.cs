@@ -3,7 +3,6 @@
  */
 using System;
 using UnityEngine;
-using System.Text.RegularExpressions;
 
 namespace InGameWiki
 {
@@ -17,23 +16,10 @@ namespace InGameWiki
             set
             {
                 json = value.Clone();
-                jsonStr = Code64ToString(json.ToString());
+                jsonStr = json.ToString().UnCode64();
             }
         }
         static Vector2 listPos, jsonPos;
-
-        static string Code64ToString(string str)
-        {
-            str = Regex.Replace(str, @"(\\u[0-9a-z]{4})", (m) =>
-            {
-                foreach (var c in m.Groups)
-                {
-                    return Regex.Unescape(c.ToString());
-                }
-                return "";
-            });
-            return str;
-        }
 
         public static void OnGUI()
         {
@@ -48,8 +34,8 @@ namespace InGameWiki
             if (GUILayout.Button("材料能量表")) Json = jsonData.instance.CaiLiaoNengLiangBiao;
             if (GUILayout.Button("支路随机采集")) Json = jsonData.instance.AllMapCaiJiBiao;
             if (GUILayout.Button("Buff")) Json = jsonData.instance._BuffJsonData;
+            if (GUILayout.Button("TianFuID")) Json = Tools.instance.getPlayer().TianFuID;
             GUILayout.EndScrollView();
-
             jsonPos = GUILayout.BeginScrollView(jsonPos, GUI.skin.box, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
             if (Json == null)
             {
@@ -57,7 +43,7 @@ namespace InGameWiki
             }
             else
             {
-                GUILayout.Label(jsonStr);
+                GUILayout.TextArea(jsonStr);
             }
             GUILayout.EndScrollView();
             GUILayout.EndHorizontal();
