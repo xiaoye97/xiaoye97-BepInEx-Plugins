@@ -43,7 +43,7 @@ namespace BetterStart
         public static void GalaxySelectPatch(UIGalaxySelect __instance)
         {
             var slider = Traverse.Create(__instance).Field("starCountSlider").GetValue<Slider>();
-            slider.maxValue = 256;
+            slider.maxValue = 255;
         }
 
         [HarmonyTranspiler, HarmonyPatch(typeof(UIGalaxySelect), "OnStarCountSliderValueChange")]
