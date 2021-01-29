@@ -5,9 +5,11 @@ using System.Collections.Generic;
 
 namespace PressingBuild
 {
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.PressingBuild", "连续建造", "1.0")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.PressingBuild", "连续建造", "1.1")]
     public class PressingBuild : BaseUnityPlugin
     {
+        public static List<int> BanList = new List<int>() { 2001, 2002, 2003, 2101, 2102, 2106, 2201, 2202, 2212 };
+
         void Start()
         {
             Harmony.CreateAndPatchAll(typeof(PressingBuild));
@@ -18,9 +20,9 @@ namespace PressingBuild
         {
             if (__instance.buildPreviews.Count > 0)
             {
-                if (__instance.buildPreviews[0].item.ID == 2001 || __instance.buildPreviews[0].item.ID == 2002 || __instance.buildPreviews[0].item.ID == 2003)
+                if(BanList.Contains(__instance.buildPreviews[0].item.ID))
                 {
-                    // 如果目标为传送带，则跳过
+                    // 如果目标被禁止连续，则跳过
                     return true;
                 }
                 else
