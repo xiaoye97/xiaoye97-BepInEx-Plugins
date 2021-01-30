@@ -45,14 +45,6 @@ namespace DysonSphereBlueprint
             DSPSkin = ab.LoadAsset<GUISkin>("DSPSkin");
         }
 
-        void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.K))
-            {
-                Show = !Show;
-            }
-        }
-
         void OnGUI()
         {
             if (GameMain.instance != null && GameMain.mainPlayer != null)
