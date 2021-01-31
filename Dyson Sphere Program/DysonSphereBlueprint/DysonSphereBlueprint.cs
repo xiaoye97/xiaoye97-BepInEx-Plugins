@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace DysonSphereBlueprint
 {
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.DysonSphereBlueprint", "DysonSphereBlueprint", "1.1")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.DysonSphereBlueprint", "DysonSphereBlueprint", "1.2")]
     public class DysonSphereBlueprint : BaseUnityPlugin
     {
         public static string BPDir;
@@ -77,7 +77,7 @@ namespace DysonSphereBlueprint
             BPPathList.Clear();
             BPFileNameList.Clear();
             DirectoryInfo dir = new DirectoryInfo(BPDir);
-            if(dir.Exists)
+            if (dir.Exists)
             {
                 foreach (var file in dir.GetFiles("*.dsbp"))
                 {
@@ -230,6 +230,32 @@ namespace DysonSphereBlueprint
                     w.Write(0);
                 }
             }
+            w.Write(_this.autoNodeCount);
+            w.Write(_this.autoNodes.Length);
+            for (int l = 0; l < _this.autoNodes.Length; l++)
+            {
+                if (_this.autoNodes[l] != null)
+                {
+                    w.Write(1);
+                    w.Write(_this.autoNodes[l].layerId);
+                    w.Write(_this.autoNodes[l].id);
+                }
+                else
+                {
+                    w.Write(0);
+                }
+            }
+            w.Write(_this.nrdCapacity);
+            w.Write(_this.nrdCursor);
+            w.Write(_this.nrdRecycleCursor);
+            for (int m = 1; m < _this.nrdCursor; m++)
+            {
+                _this.nrdPool[m].Export(w);
+            }
+            for (int n = 0; n < _this.nrdRecycleCursor; n++)
+            {
+                w.Write(_this.nrdRecycle[n]);
+            }
         }
 
         public static void ImportBP(this DysonSphere _this, BinaryReader r)
@@ -269,6 +295,56 @@ namespace DysonSphereBlueprint
                 }
             }
             _this.LayerSort();
+            _this.autoNodeCount = r.ReadInt32();
+            num3 = r.ReadInt32();
+            for (int l = 0; l < num3; l++)
+            {
+                int num6 = r.ReadInt32();
+                if (num6 > 0)
+                {
+                    int layerId = r.ReadInt32();
+                    int nodeId = r.ReadInt32();
+                    if (l < _this.autoNodes.Length)
+                    {
+                        _this.autoNodes[l] = _this.FindNode(layerId, nodeId);
+                    }
+                }
+            }
+            _this.ArrangeAutoNodes();
+            if (num >= 2)
+            {
+                Traverse.Create(_this).Method("SetNrdCapacity", r.ReadInt32()).GetValue();
+                _this.nrdCursor = r.ReadInt32();
+                _this.nrdRecycleCursor = r.ReadInt32();
+                for (int m = 1; m < _this.nrdCursor; m++)
+                {
+                    _this.nrdPool[m].Import(r);
+                }
+                for (int n = 0; n < _this.nrdRecycleCursor; n++)
+                {
+                    _this.nrdRecycle[n] = r.ReadInt32();
+                }
+                _this.nrdBuffer.SetData(_this.nrdPool);
+            }
+            else
+            {
+                Traverse.Create(_this).Method("SetNrdCapacity", 128).GetValue();
+                for (int num7 = 0; num7 < 10; num7++)
+                {
+                    DysonSphereLayer dysonSphereLayer2 = _this.layersIdBased[num7];
+                    if (dysonSphereLayer2 != null)
+                    {
+                        for (int num8 = 1; num8 < dysonSphereLayer2.nodeCursor; num8++)
+                        {
+                            if (dysonSphereLayer2.nodePool[num8] != null && dysonSphereLayer2.nodePool[num8].id == num8)
+                            {
+                                _this.AddDysonNodeRData(dysonSphereLayer2.nodePool[num8], false);
+                            }
+                        }
+                    }
+                }
+                _this.nrdBuffer.SetData(_this.nrdPool);
+            }
             if (_this.autoNodeCount == 0)
             {
                 _this.PickAutoNode();
@@ -476,6 +552,8 @@ namespace DysonSphereBlueprint
             w.Write(_this.pos.z);
             w.Write(_this.spMax);
             w.Write(_this.rid);
+            w.Write(_this.frameTurn);
+            w.Write(_this.shellTurn);
         }
 
         public static void ImportBP(this DysonNode _this, BinaryReader r)
@@ -491,6 +569,8 @@ namespace DysonSphereBlueprint
             _this.pos.z = r.ReadSingle();
             _this.spMax = r.ReadInt32();
             _this.rid = r.ReadInt32();
+            _this.frameTurn = r.ReadInt32();
+            _this.shellTurn = r.ReadInt32();
             _this.RecalcSpReq();
             _this.RecalcCpReq();
         }
