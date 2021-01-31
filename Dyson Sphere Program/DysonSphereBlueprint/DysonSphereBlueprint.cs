@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace DysonSphereBlueprint
 {
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.DysonSphereBlueprint", "DysonSphereBlueprint", "1.0")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.DysonSphereBlueprint", "DysonSphereBlueprint", "1.1")]
     public class DysonSphereBlueprint : BaseUnityPlugin
     {
         public static string BPDir;
@@ -77,10 +77,17 @@ namespace DysonSphereBlueprint
             BPPathList.Clear();
             BPFileNameList.Clear();
             DirectoryInfo dir = new DirectoryInfo(BPDir);
-            foreach (var file in dir.GetFiles("*.dsbp"))
+            if(dir.Exists)
             {
-                BPPathList.Add(file.FullName);
-                BPFileNameList.Add(file.Name);
+                foreach (var file in dir.GetFiles("*.dsbp"))
+                {
+                    BPPathList.Add(file.FullName);
+                    BPFileNameList.Add(file.Name);
+                }
+            }
+            else
+            {
+                dir.Create();
             }
         }
 
