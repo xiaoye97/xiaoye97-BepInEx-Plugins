@@ -13,6 +13,9 @@ namespace xiaoye97
         private static Dictionary<ProtoType, List<Proto>> ReadyToAdd = new Dictionary<ProtoType, List<Proto>>();
         public static Action AddDataAction;
 
+        /// <summary>
+        /// 添加数据
+        /// </summary>
         public static void AddProto(ProtoType protoType, Proto proto)
         {
             if (!ReadyToAdd[protoType].Contains(proto))
@@ -41,6 +44,7 @@ namespace xiaoye97
             if (AddDataAction != null)
             {
                 AddDataAction();
+                AddDataAction = null;
             }
             foreach (var kv in ReadyToAdd)
             {
@@ -59,6 +63,29 @@ namespace xiaoye97
                     else if (kv.Key == ProtoType.Tutorial) AddProtosToSet(LDB.tutorial, kv.Value);
                     else if (kv.Key == ProtoType.Vege) AddProtosToSet(LDB.veges, kv.Value);
                     else if (kv.Key == ProtoType.Vein) AddProtosToSet(LDB.veins, kv.Value);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 修复新物品不显示在合成菜单的问题
+        /// </summary>
+        /// <param name="__instance"></param>
+        [HarmonyPostfix, HarmonyPatch(typeof(GameHistoryData), "Import")]
+        public static void HistoryPatch(GameHistoryData __instance)
+        {
+            foreach(var proto in ReadyToAdd[ProtoType.Recipe])
+            {
+                var recipe = proto as RecipeProto;
+                if(recipe.preTech != null)
+                {
+                    if(__instance.TechState(recipe.preTech.ID).unlocked)
+                    {
+                        if(!__instance.RecipeUnlocked(recipe.ID))
+                        {
+                            __instance.UnlockRecipe(recipe.ID);
+                        }
+                    }
                 }
             }
         }
@@ -98,6 +125,9 @@ namespace xiaoye97
             Traverse.Create(protoSet).Field("dataIndices").SetValue(dataIndices);
         }
 
+        /// <summary>
+        /// 数组添加数据
+        /// </summary>
         public static void ArrayAddItem<T>(ref T[] array, T item)
         {
             var list = array.ToList();

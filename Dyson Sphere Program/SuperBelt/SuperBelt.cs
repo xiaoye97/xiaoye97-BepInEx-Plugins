@@ -22,6 +22,7 @@ namespace SuperBelt
             // 因为部分数据可以复用，所以直接从现有库中读取
             var belt3 = LDB.items.Select(2003);
             var belt3r = LDB.recipes.Select(92);
+            var preTech = LDB.techs.Select(1605);
             ItemProto belt4 = new ItemProto();
             RecipeProto belt4r = new RecipeProto();
             // 设置合成配方数据
@@ -36,11 +37,12 @@ namespace SuperBelt
             belt4r.ResultCounts = new int[] { 3 }; // 合成结果的数量
             belt4r.GridIndex = 2501; // 在合成表中的位置，第2页，第5排，第1个
             Traverse.Create(belt4r).Field("_iconSprite").SetValue(belt3r.iconSprite); // 设置合成表图标
-            belt4r.preTech = belt3r.preTech;
+            belt4r.preTech = preTech;
             belt4r.SID = belt4r.GridIndex.ToString();
             belt4r.sid = belt4r.GridIndex.ToString();
             belt4r.Type = ERecipeType.Assemble; // 合成方式为制造台
             belt4r.Handcraft = true; // 可以手动合成
+
             // 设置物品数据
             belt4.Name = "超级传送带";
             belt4.name = "超级传送带";
