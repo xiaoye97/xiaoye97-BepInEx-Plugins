@@ -10,6 +10,10 @@
 - BetterStart更好的初始
 - BiggerReformSize更大的地基面积
 - PressingBuild连续建造
+- BatchDestruct批量拆除
+- DysonSphereBlueprint戴森球蓝图
+- LDBTool数据前置
+- SuperBelt超级传送带
 
 #### 觅长生
 - BetterSelectNum更好的数量选择
