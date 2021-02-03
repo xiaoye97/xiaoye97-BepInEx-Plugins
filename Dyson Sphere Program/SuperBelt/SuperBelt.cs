@@ -1,9 +1,8 @@
-using System;
 using BepInEx;
 using xiaoye97;
 using HarmonyLib;
-using System.Linq;
-using System.Text;
+using UnityEngine;
+using System.Reflection;
 using System.Collections.Generic;
 
 namespace SuperBelt
@@ -12,9 +11,11 @@ namespace SuperBelt
     [BepInPlugin("me.xiaoye97.plugin.Dyson.SuperBelt", "SuperBelt", "1.0")]
     public class SuperBelt : BaseUnityPlugin
     {
+        Sprite belt4Icon;
         void Start()
         {
-            LDBTool.AddDataAction += AddBeltData;
+            LDBTool.AddDataAction += AddBeltData; var ab = AssetBundle.LoadFromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("SuperBelt.belt"));
+            belt4Icon = ab.LoadAsset<Sprite>("belt-4");
         }
 
         void AddBeltData()
@@ -23,8 +24,12 @@ namespace SuperBelt
             var belt3 = LDB.items.Select(2003);
             var belt3r = LDB.recipes.Select(92);
             var preTech = LDB.techs.Select(1605);
+
             ItemProto belt4 = new ItemProto();
             RecipeProto belt4r = new RecipeProto();
+            // 设置图标
+            Traverse.Create(belt4).Field("_iconSprite").SetValue(belt4Icon);
+            Traverse.Create(belt4r).Field("_iconSprite").SetValue(belt4Icon);
             // 设置合成配方数据
             belt4r.ID = 201;
             belt4r.Name = "超级传送带";
@@ -36,7 +41,6 @@ namespace SuperBelt
             belt4r.Results = new int[] { 2004 }; // 合成结果
             belt4r.ResultCounts = new int[] { 3 }; // 合成结果的数量
             belt4r.GridIndex = 2501; // 在合成表中的位置，第2页，第5排，第1个
-            Traverse.Create(belt4r).Field("_iconSprite").SetValue(belt3r.iconSprite); // 设置合成表图标
             belt4r.preTech = preTech;
             belt4r.SID = belt4r.GridIndex.ToString();
             belt4r.sid = belt4r.GridIndex.ToString();
@@ -51,8 +55,7 @@ namespace SuperBelt
             belt4.StackSize = belt3.StackSize; // 物品堆叠
             belt4.IsEntity = belt3.IsEntity;
             belt4.CanBuild = belt3.CanBuild;
-            belt4.IconPath = "Icons/ItemRecipe/belt-3";
-            Traverse.Create(belt4).Field("_iconSprite").SetValue(belt3r.iconSprite);
+            belt4.makes = new List<RecipeProto>();
             belt4.ModelIndex = belt3.ModelIndex; // 模型序号，沿用急速传送带
             belt4.ModelCount = belt3.ModelCount;
             belt4.HpMax = belt3.HpMax;
@@ -65,6 +68,7 @@ namespace SuperBelt
             belt4.maincraft = belt4r;
             belt4.handcraftProductCount = 3;
             belt4.maincraftProductCount = 3;
+            belt4.handcrafts = new List<RecipeProto>() { belt4r };
             belt4.rawMats = belt3.rawMats;
             belt4.isRaw = belt3.isRaw;
             belt4.recipes = new List<RecipeProto>() { belt4r }; // 设置有哪些配方可以合成此物品(用于UI显示)

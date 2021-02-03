@@ -65,8 +65,10 @@ namespace xiaoye97
                     else if (kv.Key == ProtoType.Vein) AddProtosToSet(LDB.veins, kv.Value);
                 }
             }
+            GameMain.iconSet.loaded = false;
+            GameMain.iconSet.Create();
         }
-        
+
         /// <summary>
         /// 修复新物品不显示在合成菜单的问题
         /// </summary>
@@ -74,14 +76,14 @@ namespace xiaoye97
         [HarmonyPostfix, HarmonyPatch(typeof(GameHistoryData), "Import")]
         public static void HistoryPatch(GameHistoryData __instance)
         {
-            foreach(var proto in ReadyToAdd[ProtoType.Recipe])
+            foreach (var proto in ReadyToAdd[ProtoType.Recipe])
             {
                 var recipe = proto as RecipeProto;
-                if(recipe.preTech != null)
+                if (recipe.preTech != null)
                 {
-                    if(__instance.TechState(recipe.preTech.ID).unlocked)
+                    if (__instance.TechState(recipe.preTech.ID).unlocked)
                     {
-                        if(!__instance.RecipeUnlocked(recipe.ID))
+                        if (!__instance.RecipeUnlocked(recipe.ID))
                         {
                             __instance.UnlockRecipe(recipe.ID);
                         }
