@@ -3,15 +3,19 @@ using BepInEx;
 using HarmonyLib;
 using System.Linq;
 using UnityEngine;
+using BepInEx.Configuration;
 using System.Collections.Generic;
 
 namespace xiaoye97
 {
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.0")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.1")]
     public class LDBTool : BaseUnityPlugin
     {
         private static Dictionary<ProtoType, List<Proto>> ReadyToAdd = new Dictionary<ProtoType, List<Proto>>();
         public static Action AddDataAction;
+        public static Action<Proto> EditDataAction;
+        public static ConfigEntry<bool> ShowProto;
+        public static ConfigEntry<KeyCode> ShowProtoHotKey;
 
         /// <summary>
         /// 添加数据
@@ -34,7 +38,28 @@ namespace xiaoye97
 
         void Start()
         {
+            ShowProto = Config.Bind<bool>("config", "ShowProto", false, "是否开启数据显示");
+            ShowProtoHotKey = Config.Bind<KeyCode>("config", "ShowProtoHotKey", KeyCode.F5, "呼出界面的快捷键");
             Harmony.CreateAndPatchAll(typeof(LDBTool));
+        }
+
+        void Update()
+        {
+            if (ShowProto.Value)
+            {
+                if (Input.GetKeyDown(ShowProtoHotKey.Value))
+                {
+                    ProtoDataUI.Show = !ProtoDataUI.Show;
+                }
+            }
+        }
+
+        void OnGUI()
+        {
+            if (ShowProto.Value && ProtoDataUI.Show)
+            {
+                ProtoDataUI.OnGUI();
+            }
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(VFPreload), "InvokeOnLoadWorkEnded")]
@@ -63,6 +88,37 @@ namespace xiaoye97
                     else if (kv.Key == ProtoType.Tutorial) AddProtosToSet(LDB.tutorial, kv.Value);
                     else if (kv.Key == ProtoType.Vege) AddProtosToSet(LDB.veges, kv.Value);
                     else if (kv.Key == ProtoType.Vein) AddProtosToSet(LDB.veins, kv.Value);
+                }
+            }
+            List<Proto> allProto = new List<Proto>();
+            foreach (var p in LDB.advisorTips.dataArray) allProto.Add(p);
+            foreach (var p in LDB.audios.dataArray) allProto.Add(p);
+            foreach (var p in LDB.effectEmitters.dataArray) allProto.Add(p);
+            foreach (var p in LDB.items.dataArray) allProto.Add(p);
+            foreach (var p in LDB.models.dataArray) allProto.Add(p);
+            foreach (var p in LDB.players.dataArray) allProto.Add(p);
+            foreach (var p in LDB.recipes.dataArray) allProto.Add(p);
+            foreach (var p in LDB.strings.dataArray) allProto.Add(p);
+            foreach (var p in LDB.techs.dataArray) allProto.Add(p);
+            foreach (var p in LDB.themes.dataArray) allProto.Add(p);
+            foreach (var p in LDB.tutorial.dataArray) allProto.Add(p);
+            foreach (var p in LDB.veges.dataArray) allProto.Add(p);
+            foreach (var p in LDB.veins.dataArray) allProto.Add(p);
+            if (EditDataAction != null)
+            {
+                foreach (var p in allProto)
+                {
+                    if (p != null)
+                    {
+                        try
+                        {
+                            EditDataAction(p);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogWarning($"[LDBTool]Edit Error: ID:{p.ID} Type:{p.GetType().Name} {e.Message}");
+                        }
+                    }
                 }
             }
             GameMain.iconSet.loaded = false;
