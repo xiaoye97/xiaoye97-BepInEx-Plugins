@@ -14,8 +14,31 @@ namespace SuperBelt
         Sprite belt4Icon;
         void Start()
         {
-            LDBTool.AddDataAction += AddBeltData; var ab = AssetBundle.LoadFromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("SuperBelt.belt"));
+            LDBTool.PreAddDataAction += AddTranslate;
+            LDBTool.PostAddDataAction += AddBeltData;
+            var ab = AssetBundle.LoadFromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("SuperBelt.belt"));
             belt4Icon = ab.LoadAsset<Sprite>("belt-4");
+        }
+
+        void AddTranslate()
+        {
+            // 添加翻译
+            StringProto nameString = new StringProto();
+            nameString.ID = 10001;
+            nameString.Name = "SuperBelt_Name";
+            nameString.name = "SuperBelt_Name";
+            nameString.ZHCN = "超级传送带";
+            nameString.ENUS = "Super Belt";
+            nameString.FRFR = "Super Belt";
+            StringProto descString = new StringProto();
+            descString.ID = 10002;
+            descString.Name = "SuperBelt_Desc";
+            descString.name = "SuperBelt_Desc";
+            descString.ZHCN = "比急速传送带更强力的设备，有效升级你的工厂！它可以60/s传输物品!";
+            descString.ENUS = "It can transmit items at 60/s!";
+            descString.FRFR = "It can transmit items at 60/s!";
+            LDBTool.PreAddProto(ProtoType.String, nameString);
+            LDBTool.PreAddProto(ProtoType.String, descString);
         }
 
         void AddBeltData()
@@ -32,9 +55,10 @@ namespace SuperBelt
             Traverse.Create(belt4r).Field("_iconSprite").SetValue(belt4Icon);
             // 设置合成配方数据
             belt4r.ID = 201;
-            belt4r.Name = "超级传送带";
-            belt4r.name = "超级传送带";
-            belt4r.Description = "比急速传送带更强力的设备，有效升级你的工厂！";
+            belt4r.Name = "SuperBelt_Name";
+            belt4r.name = "SuperBelt_Name".Translate();
+            belt4r.Description = "SuperBelt_Desc";
+            belt4r.description = "SuperBelt_Desc".Translate();
             belt4r.TimeSpend = belt3r.TimeSpend;
             belt4r.Items = new int[] { 2003, 1205, 1124 }; // 合成材料
             belt4r.ItemCounts = new int[] { 3, 1, 1 }; // 合成材料需要的数量
@@ -48,8 +72,10 @@ namespace SuperBelt
             belt4r.Handcraft = true; // 可以手动合成
 
             // 设置物品数据
-            belt4.Name = "超级传送带";
-            belt4.name = "超级传送带";
+            belt4.Name = "SuperBelt_Name";
+            belt4.name = "SuperBelt_Name".Translate();
+            belt4.Description = "SuperBelt_Desc";
+            belt4.description = "SuperBelt_Desc".Translate();
             belt4.ID = 2004;
             belt4.Type = belt3.Type; // 物品类型
             belt4.StackSize = belt3.StackSize; // 物品堆叠
@@ -63,7 +89,6 @@ namespace SuperBelt
             belt4.BuildMode = belt3.BuildMode;
             belt4.GridIndex = belt4r.GridIndex;
             belt4.DescFields = new int[] { 15, 1 };
-            belt4.description = "将急速传送带再次强化，获得更高的性能!";
             belt4.handcraft = belt4r;
             belt4.maincraft = belt4r;
             belt4.handcraftProductCount = 3;
@@ -90,8 +115,8 @@ namespace SuperBelt
             belt4.prefabDesc.selectDistance = belt3.prefabDesc.selectDistance;
             belt4.prefabDesc.signHeight = belt3.prefabDesc.signHeight;
             belt4.prefabDesc.signSize = belt3.prefabDesc.signSize;
-            LDBTool.AddProto(ProtoType.Recipe, belt4r);
-            LDBTool.AddProto(ProtoType.Item, belt4);
+            LDBTool.PostAddProto(ProtoType.Recipe, belt4r);
+            LDBTool.PostAddProto(ProtoType.Item, belt4);
         }
     }
 }
