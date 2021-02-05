@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace xiaoye97
 {
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.2")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.3")]
     public class LDBTool : BaseUnityPlugin
     {
         private static Dictionary<ProtoType, List<Proto>> PreToAdd = new Dictionary<ProtoType, List<Proto>>();
@@ -18,6 +18,7 @@ namespace xiaoye97
         public static Action<Proto> EditDataAction;
         public static ConfigEntry<bool> ShowProto;
         public static ConfigEntry<KeyCode> ShowProtoHotKey;
+        private static bool Finshed;
 
         /// <summary>
         /// 在VFPreload.PreloadThread之前添加数据
@@ -105,6 +106,7 @@ namespace xiaoye97
         [HarmonyPrefix, HarmonyPatch(typeof(VFPreload), "InvokeOnLoadWorkEnded")]
         public static void VFPreloadPrePatch()
         {
+            if (Finshed) return;
             Debug.Log("[LDBTool]Pre Loading...");
             if (PreAddDataAction != null)
             {
@@ -117,6 +119,7 @@ namespace xiaoye97
         [HarmonyPostfix, HarmonyPatch(typeof(VFPreload), "InvokeOnLoadWorkEnded")]
         public static void VFPreloadPostPatch()
         {
+            if (Finshed) return;
             Debug.Log("[LDBTool]Post Loading...");
             if (PostAddDataAction != null)
             {
@@ -157,6 +160,8 @@ namespace xiaoye97
             }
             GameMain.iconSet.loaded = false;
             GameMain.iconSet.Create();
+            Finshed = true;
+            Debug.Log("[LDBTool]Done.");
         }
 
         /// <summary>
@@ -196,6 +201,11 @@ namespace xiaoye97
             for (int i = 0; i < protos.Count; i++)
             {
                 protoSet.dataArray[array.Length + i] = protos[i] as T;
+
+                if (protos[i] is ItemProto)
+                {
+                    Traverse.Create(protos[i]).Property("index").SetValue(array.Length + i);
+                }
                 if (protos[i] is RecipeProto)
                 {
                     RecipeProto proto = protos[i] as RecipeProto;
@@ -216,8 +226,8 @@ namespace xiaoye97
             Traverse.Create(protoSet).Field("dataIndices").SetValue(dataIndices);
             if (protoSet is ProtoSet<StringProto>)
             {
-                var nameIndices = new Dictionary<string, int>();
-                for (int i = 0; i < protoSet.dataArray.Length; i++)
+                var nameIndices = Traverse.Create(protoSet).Field("nameIndices").GetValue<Dictionary<string, int>>();
+                for (int i = array.Length; i < protoSet.dataArray.Length; i++)
                 {
                     nameIndices[protoSet.dataArray[i].Name] = i;
                 }
