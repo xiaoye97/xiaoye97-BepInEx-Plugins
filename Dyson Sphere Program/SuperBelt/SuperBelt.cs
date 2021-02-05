@@ -10,7 +10,7 @@ using System.Collections.Generic;
 namespace SuperBelt
 {
     [BepInDependency("me.xiaoye97.plugin.Dyson.LDBTool", BepInDependency.DependencyFlags.HardDependency)]
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.SuperBelt", "SuperBelt", "1.2")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.SuperBelt", "SuperBelt", "1.2.1")]
     public class SuperBelt : BaseUnityPlugin
     {
         Sprite belt4Icon, belt5Icon;
@@ -150,23 +150,31 @@ namespace SuperBelt
             Debug.Log("[SuperBelt]Add mat and mesh...");
             Configs inst = Traverse.Create(typeof(Configs)).Field("instance").GetValue<Configs>();
             var builtin = inst.m_builtin;
-            var oriMat = Instantiate(builtin.beltMat[8]);
+
             List<Material> mats = new List<Material>(builtin.beltMat);
-            oriMat.color = belt4Color;
             for (int i = 0; i < 4; i++)
             {
+                var oriMat = Instantiate(builtin.beltMat[8 + i]);
+                oriMat.color = belt4Color;
                 mats.Add(Instantiate(oriMat));
             }
-            oriMat.color = belt5Color;
             for (int i = 0; i < 4; i++)
             {
+                var oriMat = Instantiate(builtin.beltMat[8 + i]);
+                oriMat.color = belt5Color;
                 mats.Add(Instantiate(oriMat));
             }
             builtin.beltMat = mats.ToArray();
             List<Mesh> meshs = new List<Mesh>(builtin.beltMesh);
-            var oriMesh = Instantiate(builtin.beltMesh[0]);
-            for (int i = 0; i < 8; i++)
+
+            for (int i = 0; i < 4; i++)
             {
+                var oriMesh = Instantiate(builtin.beltMesh[8 + i]);
+                meshs.Add(Instantiate(oriMesh));
+            }
+            for (int i = 0; i < 4; i++)
+            {
+                var oriMesh = Instantiate(builtin.beltMesh[8 + i]);
                 meshs.Add(Instantiate(oriMesh));
             }
             builtin.beltMesh = meshs.ToArray();
