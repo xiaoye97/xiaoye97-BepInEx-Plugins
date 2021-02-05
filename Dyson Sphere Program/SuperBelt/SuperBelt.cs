@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace SuperBelt
 {
     [BepInDependency("me.xiaoye97.plugin.Dyson.LDBTool", BepInDependency.DependencyFlags.HardDependency)]
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.SuperBelt", "SuperBelt", "1.0")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.SuperBelt", "SuperBelt", "1.1")]
     public class SuperBelt : BaseUnityPlugin
     {
         Sprite belt4Icon;
