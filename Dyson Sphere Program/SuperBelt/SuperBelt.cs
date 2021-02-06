@@ -10,7 +10,7 @@ using System.Collections.Generic;
 namespace SuperBelt
 {
     [BepInDependency("me.xiaoye97.plugin.Dyson.LDBTool", BepInDependency.DependencyFlags.HardDependency)]
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.SuperBelt", "SuperBelt", "1.2.1")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.SuperBelt", "SuperBelt", "1.2.2")]
     public class SuperBelt : BaseUnityPlugin
     {
         Sprite belt4Icon, belt5Icon;
@@ -278,7 +278,7 @@ namespace SuperBelt
                 }
             }
             _this.beltPool[beltId].modelBatchIndex = num4 + 1;
-            _this.beltPool[beltId].modelIndex = Traverse.Create(_this).Field("beltRenderingBatch").GetValue<BeltRenderingBatch[]>()[num4].AddNode(tmpBeltAnchors);
+            _this.beltPool[beltId].modelIndex = _this.beltRenderingBatch[num4].AddNode(tmpBeltAnchors);
             return false;
         }
 
@@ -297,6 +297,123 @@ namespace SuperBelt
             var codes = instructions.ToList();
             codes[14].operand = 20;
             return codes.AsEnumerable();
+        }
+        #endregion
+
+        #region speed bug fix
+        [HarmonyPrefix, HarmonyPatch(typeof(CargoPath), "Update")]
+        public static bool CargoPathPatch(CargoPath __instance)
+        {
+            var _this = __instance;
+            if (_this.outputPath != null)
+            {
+                int num = _this.bufferLength - 5 - 1;
+                if (_this.buffer[num] == 250)
+                {
+                    int cargoId = (int)(_this.buffer[num + 1] - 1 + (_this.buffer[num + 2] - 1) * 100) + (int)(_this.buffer[num + 3] - 1) * 10000 + (int)(_this.buffer[num + 4] - 1) * 1000000;
+                    if (_this.closed)
+                    {
+                        if (_this.outputPath.TryInsertCargoNoSqueeze(_this.outputIndex, cargoId))
+                        {
+                            Array.Clear(_this.buffer, num - 4, 10);
+                            _this.updateLen = _this.bufferLength;
+                        }
+                    }
+                    else if (_this.outputPath.TryInsertCargo(_this.outputIndex, cargoId))
+                    {
+                        Array.Clear(_this.buffer, num - 4, 10);
+                        _this.updateLen = _this.bufferLength;
+                    }
+                }
+            }
+            else if (_this.bufferLength <= 10) return false;
+            if (!_this.closed)
+            {
+                int num2 = _this.bufferLength - 1;
+                if (_this.buffer[num2] != 255 && _this.buffer[num2] != 0)
+                {
+                    Assert.CannotBeReached(string.Concat(new object[]
+                    {
+                        "Corrupt cargo path rear! ", _this.id, " ", num2
+                    }));
+                    for (int i = num2; i >= 0; i--)
+                    {
+                        if (_this.buffer[i] == 246)
+                        {
+                            _this.buffer[i] = 0;
+                            break;
+                        }
+                        _this.buffer[i] = 0;
+                    }
+                    _this.updateLen = _this.bufferLength;
+                }
+            }
+            for (int j = _this.updateLen - 1; j >= 0; j--)
+            {
+                if (_this.buffer[j] == 0) break;
+                _this.updateLen--;
+            }
+            if (_this.updateLen == 0) return false;
+            int num3 = _this.updateLen;
+            for (int k = _this.chunkCount - 1; k >= 0; k--)
+            {
+                int num4 = _this.chunks[k * 3];
+                int num5 = _this.chunks[k * 3 + 2];
+                if (num4 < num3)
+                {
+                    if (_this.buffer[num4] != 0)
+                    {
+                        for (int l = num4 - 5; l < num4 + 4; l++)
+                        {
+                            if (l >= 0)
+                            {
+                                if (_this.buffer[l] == 250)
+                                {
+                                    if (l < num4)
+                                    {
+                                        int num6 = l + 5 + 1;
+                                        num4 = num6;
+                                    }
+                                    else
+                                    {
+                                        int num7 = l - 4;
+                                        num4 = num7;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    int m = 0;
+                    while (m < num5)
+                    {
+                        int num8 = num3 - num4;
+                        if (num8 < 10) break;
+                        int num9 = 0;
+                        for (int n = 0; n < num5 - m; n++)
+                        {
+                            int num10 = num3 - 1 - n;
+                            if (num10 < 0 || num10 >= _this.buffer.Length) break;
+                            if (_this.buffer[num10] != 0) break;
+                            num9++;
+                        }
+                        if (num9 > 0)
+                        {
+                            if (num8 - num9 > 0) Array.Copy(_this.buffer, num4, _this.buffer, num4 + num9, num8 - num9);
+                            Array.Clear(_this.buffer, num4, num9);
+                            m += num9;
+                        }
+                        for (int num11 = num3 - 1; num11 >= 0; num11--)
+                        {
+                            if (_this.buffer[num11] == 0) break;
+                            num3--;
+                        }
+                    }
+                    int num12 = num4 + ((m != 0) ? m : 1);
+                    if (num3 > num12) num3 = num12;
+                }
+            }
+            return false;
         }
         #endregion
     }
