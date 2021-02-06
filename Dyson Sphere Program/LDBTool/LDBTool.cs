@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace xiaoye97
 {
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.3")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.4")]
     public class LDBTool : BaseUnityPlugin
     {
         private static Dictionary<ProtoType, List<Proto>> PreToAdd = new Dictionary<ProtoType, List<Proto>>();
@@ -19,6 +19,32 @@ namespace xiaoye97
         public static ConfigEntry<bool> ShowProto;
         public static ConfigEntry<KeyCode> ShowProtoHotKey;
         private static bool Finshed;
+        private static ConfigFile CustomConfig = new ConfigFile($"{Paths.ConfigPath}/LDBTool.CustomID.cfg", true);
+        public static Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>> IDDict = new Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>>();
+
+        /// <summary>
+        /// 通过配置文件绑定ID，允许玩家在冲突时自定义ID
+        /// </summary>
+        /// <param name="protoType"></param>
+        /// <param name="proto"></param>
+        private static void IdBind(ProtoType protoType, Proto proto)
+        {
+            var entry = CustomConfig.Bind<int>(protoType.ToString(), proto.Name, proto.ID);
+            proto.ID = entry.Value;
+            if (!IDDict.ContainsKey(protoType))
+            {
+                IDDict.Add(protoType, new Dictionary<string, ConfigEntry<int>>());
+            }
+            if (IDDict[protoType].ContainsKey(proto.Name))
+            {
+                Debug.LogError($"[LDBTool] Name {proto.Name} already exists.please check mod.");
+                Debug.LogError($"[LDBTool] 姓名 {proto.Name} 已经存在.请检查Mod.");
+            }
+            else
+            {
+                IDDict[protoType].Add(proto.Name, entry);
+            }
+        }
 
         /// <summary>
         /// 在VFPreload.PreloadThread之前添加数据
@@ -27,6 +53,7 @@ namespace xiaoye97
         {
             if (!PreToAdd[protoType].Contains(proto))
             {
+                IdBind(protoType, proto);
                 PreToAdd[protoType].Add(proto);
                 TotalDict[protoType].Add(proto);
             }
@@ -39,6 +66,7 @@ namespace xiaoye97
         {
             if (!PostToAdd[protoType].Contains(proto))
             {
+                IdBind(protoType, proto);
                 PostToAdd[protoType].Add(proto);
                 TotalDict[protoType].Add(proto);
             }
@@ -244,22 +272,5 @@ namespace xiaoye97
             list.Add(item);
             array = list.ToArray();
         }
-    }
-
-    public enum ProtoType
-    {
-        AdvisorTip,
-        Audio,
-        EffectEmitter,
-        Item,
-        Model,
-        Player,
-        Recipe,
-        String,
-        Tech,
-        Theme,
-        Tutorial,
-        Vege,
-        Vein
     }
 }
