@@ -6,5 +6,14 @@ namespace xiaoye97
         {
             data.Show();
         }
+
+        public static void ShowProto(Proto proto)
+        {
+            if (proto != null)
+            {
+                ShowItem item = new ShowItem(proto, $"{proto.GetType().Name} {proto.name.Translate()}");
+                ShowData(item);
+            }
+        }
     }
 }

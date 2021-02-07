@@ -3,24 +3,81 @@ using BepInEx;
 using HarmonyLib;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 using BepInEx.Configuration;
 using System.Collections.Generic;
 
 namespace xiaoye97
 {
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.4")]
-    public class LDBTool : BaseUnityPlugin
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.5")]
+    public class LDBToolPlugin : BaseUnityPlugin
     {
-        private static Dictionary<ProtoType, List<Proto>> PreToAdd = new Dictionary<ProtoType, List<Proto>>();
-        private static Dictionary<ProtoType, List<Proto>> PostToAdd = new Dictionary<ProtoType, List<Proto>>();
-        private static Dictionary<ProtoType, List<Proto>> TotalDict = new Dictionary<ProtoType, List<Proto>>();
+        void Awake()
+        {
+            for (int i = 0; i <= (int)ProtoType.Vein; i++)
+            {
+                LDBTool.PreToAdd.Add((ProtoType)i, new List<Proto>());
+                LDBTool.PostToAdd.Add((ProtoType)i, new List<Proto>());
+                LDBTool.TotalDict.Add((ProtoType)i, new List<Proto>());
+            }
+        }
+
+        void Start()
+        {
+            LDBTool.ShowProto = Config.Bind<bool>("config", "ShowProto", false, "是否开启数据显示");
+            LDBTool.ShowProtoHotKey = Config.Bind<KeyCode>("config", "ShowProtoHotKey", KeyCode.F5, "呼出界面的快捷键");
+            LDBTool.ShowItemProtoHotKey = Config.Bind<KeyCode>("config", "ShowItemProtoHotKey", KeyCode.I, "显示物品的Proto");
+            LDBTool.ShowRecipeProtoHotKey = Config.Bind<KeyCode>("config", "ShowRecipeProtoHotKey", KeyCode.R, "显示配方的Proto");
+            Harmony.CreateAndPatchAll(typeof(LDBTool));
+        }
+
+        void Update()
+        {
+            if (LDBTool.ShowProto.Value)
+            {
+                if (Input.GetKeyDown(LDBTool.ShowProtoHotKey.Value))
+                {
+                    ProtoDataUI.Show = !ProtoDataUI.Show;
+                }
+                if(SupportsHelper.SupportsRuntimeUnityEditor)
+                {
+                    if (Input.GetKeyDown(LDBTool.ShowItemProtoHotKey.Value))
+                    {
+                        LDBTool.TryShowItemProto();
+                    }
+                    if (Input.GetKeyDown(LDBTool.ShowRecipeProtoHotKey.Value))
+                    {
+                        LDBTool.TryShowRecipeProto();
+                    }
+                }
+            }
+        }
+
+        void OnGUI()
+        {
+            if (LDBTool.ShowProto.Value && ProtoDataUI.Show)
+            {
+                ProtoDataUI.OnGUI();
+            }
+        }
+    }
+
+    public static class LDBTool
+    {
+        // 添加数据的Action
         public static Action PreAddDataAction, PostAddDataAction;
+        // 修改数据的Action
         public static Action<Proto> EditDataAction;
-        public static ConfigEntry<bool> ShowProto;
-        public static ConfigEntry<KeyCode> ShowProtoHotKey;
+
+        internal static Dictionary<ProtoType, List<Proto>> PreToAdd = new Dictionary<ProtoType, List<Proto>>();
+        internal static Dictionary<ProtoType, List<Proto>> PostToAdd = new Dictionary<ProtoType, List<Proto>>();
+        internal static Dictionary<ProtoType, List<Proto>> TotalDict = new Dictionary<ProtoType, List<Proto>>();
+        internal static ConfigEntry<bool> ShowProto;
+        internal static ConfigEntry<KeyCode> ShowProtoHotKey, ShowItemProtoHotKey, ShowRecipeProtoHotKey;
         private static bool Finshed;
         private static ConfigFile CustomConfig = new ConfigFile($"{Paths.ConfigPath}/LDBTool.CustomID.cfg", true);
-        public static Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>> IDDict = new Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>>();
+        private static Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>> IDDict = new Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>>();
+        private static UIItemTip lastTip;
 
         /// <summary>
         /// 通过配置文件绑定ID，允许玩家在冲突时自定义ID
@@ -47,8 +104,10 @@ namespace xiaoye97
         }
 
         /// <summary>
-        /// 在VFPreload.PreloadThread之前添加数据
+        /// 在游戏数据加载之前添加数据
         /// </summary>
+        /// <param name="protoType">要添加的Proto的类型</param>
+        /// <param name="proto">要添加的Proto</param>
         public static void PreAddProto(ProtoType protoType, Proto proto)
         {
             if (!PreToAdd[protoType].Contains(proto))
@@ -60,8 +119,10 @@ namespace xiaoye97
         }
 
         /// <summary>
-        /// 在VFPreload.PreloadThread之后添加数据
+        /// 在游戏数据加载之后添加数据
         /// </summary>
+        /// <param name="protoType">要添加的Proto的类型</param>
+        /// <param name="proto">要添加的Proto</param>
         public static void PostAddProto(ProtoType protoType, Proto proto)
         {
             if (!PostToAdd[protoType].Contains(proto))
@@ -69,42 +130,6 @@ namespace xiaoye97
                 IdBind(protoType, proto);
                 PostToAdd[protoType].Add(proto);
                 TotalDict[protoType].Add(proto);
-            }
-        }
-
-        void Awake()
-        {
-            for (int i = 0; i <= (int)ProtoType.Vein; i++)
-            {
-                PreToAdd.Add((ProtoType)i, new List<Proto>());
-                PostToAdd.Add((ProtoType)i, new List<Proto>());
-                TotalDict.Add((ProtoType)i, new List<Proto>());
-            }
-        }
-
-        void Start()
-        {
-            ShowProto = Config.Bind<bool>("config", "ShowProto", false, "是否开启数据显示");
-            ShowProtoHotKey = Config.Bind<KeyCode>("config", "ShowProtoHotKey", KeyCode.F5, "呼出界面的快捷键");
-            Harmony.CreateAndPatchAll(typeof(LDBTool));
-        }
-
-        void Update()
-        {
-            if (ShowProto.Value)
-            {
-                if (Input.GetKeyDown(ShowProtoHotKey.Value))
-                {
-                    ProtoDataUI.Show = !ProtoDataUI.Show;
-                }
-            }
-        }
-
-        void OnGUI()
-        {
-            if (ShowProto.Value && ProtoDataUI.Show)
-            {
-                ProtoDataUI.OnGUI();
             }
         }
 
@@ -132,7 +157,7 @@ namespace xiaoye97
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(VFPreload), "InvokeOnLoadWorkEnded")]
-        public static void VFPreloadPrePatch()
+        private static void VFPreloadPrePatch()
         {
             if (Finshed) return;
             Debug.Log("[LDBTool]Pre Loading...");
@@ -145,7 +170,7 @@ namespace xiaoye97
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(VFPreload), "InvokeOnLoadWorkEnded")]
-        public static void VFPreloadPostPatch()
+        private static void VFPreloadPostPatch()
         {
             if (Finshed) return;
             Debug.Log("[LDBTool]Post Loading...");
@@ -197,7 +222,7 @@ namespace xiaoye97
         /// </summary>
         /// <param name="__instance"></param>
         [HarmonyPostfix, HarmonyPatch(typeof(GameHistoryData), "Import")]
-        public static void HistoryPatch(GameHistoryData __instance)
+        private static void HistoryPatch(GameHistoryData __instance)
         {
             foreach (var proto in TotalDict[ProtoType.Recipe])
             {
@@ -218,7 +243,7 @@ namespace xiaoye97
         /// <summary>
         /// 添加多个数据到数据表
         /// </summary>
-        public static void AddProtosToSet<T>(ProtoSet<T> protoSet, List<Proto> protos) where T : Proto
+        private static void AddProtosToSet<T>(ProtoSet<T> protoSet, List<Proto> protos) where T : Proto
         {
             var array = protoSet.dataArray;
             protoSet.Init(array.Length + protos.Count);
@@ -266,11 +291,80 @@ namespace xiaoye97
         /// <summary>
         /// 数组添加数据
         /// </summary>
-        public static void ArrayAddItem<T>(ref T[] array, T item)
+        private static void ArrayAddItem<T>(ref T[] array, T item)
         {
             var list = array.ToList();
             list.Add(item);
             array = list.ToArray();
+        }
+
+        /// <summary>
+        /// 在物品提示显示ID
+        /// </summary>
+        [HarmonyPostfix, HarmonyPatch(typeof(UIItemTip), "SetTip")]
+        private static void ItemTipPatch(UIItemTip __instance, int itemId)
+        {
+            if (ShowProto.Value)
+            {
+                Traverse.Create(__instance).Field("nameText").GetValue<Text>().text += $" {itemId}";
+                lastTip = __instance;
+            }
+        }
+
+        /// <summary>
+        /// 尝试显示ItemProto，通过按键触发
+        /// </summary>
+        internal static void TryShowItemProto()
+        {
+            if (ShowProto.Value)
+            {
+                if (lastTip != null && lastTip.showingItemId != 0)
+                {
+                    var proto = LDB.items.Select(lastTip.showingItemId);
+                    if (proto != null)
+                    {
+                        RUEHelper.ShowProto(proto);
+                    }
+                    else
+                    {
+                        var recipe = LDB.recipes.Select(-lastTip.showingItemId);
+                        if (recipe != null)
+                        {
+                            foreach (var id in recipe.Results)
+                            {
+                                var item = LDB.items.Select(id);
+                                RUEHelper.ShowProto(item);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 尝试显示RecipeProto，通过按键触发
+        /// </summary>
+        internal static void TryShowRecipeProto()
+        {
+            if (ShowProto.Value)
+            {
+                if (lastTip != null && lastTip.showingItemId != 0)
+                {
+                    var itemProto = LDB.items.Select(lastTip.showingItemId);
+                    if (itemProto != null)
+                    {
+                        foreach (var proto in itemProto.recipes)
+                        {
+                            RUEHelper.ShowProto(proto);
+                        }
+                    }
+                    else
+                    {
+                        var proto = LDB.recipes.Select(-lastTip.showingItemId);
+                        RUEHelper.ShowProto(proto);
+                    }
+                }
+            }
         }
     }
 }
