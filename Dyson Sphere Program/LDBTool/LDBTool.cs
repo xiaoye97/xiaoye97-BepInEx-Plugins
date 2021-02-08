@@ -4,12 +4,13 @@ using HarmonyLib;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Reflection;
 using BepInEx.Configuration;
 using System.Collections.Generic;
 
 namespace xiaoye97
 {
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.5")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.6")]
     public class LDBToolPlugin : BaseUnityPlugin
     {
         void Awake()
@@ -19,6 +20,10 @@ namespace xiaoye97
                 LDBTool.PreToAdd.Add((ProtoType)i, new List<Proto>());
                 LDBTool.PostToAdd.Add((ProtoType)i, new List<Proto>());
                 LDBTool.TotalDict.Add((ProtoType)i, new List<Proto>());
+            }
+            if(SupportsHelper.SupportsRuntimeUnityEditor)
+            {
+                ProtoDataUI.Skin = new RUESkin();
             }
         }
 
@@ -75,18 +80,28 @@ namespace xiaoye97
         internal static ConfigEntry<bool> ShowProto;
         internal static ConfigEntry<KeyCode> ShowProtoHotKey, ShowItemProtoHotKey, ShowRecipeProtoHotKey;
         private static bool Finshed;
-        private static ConfigFile CustomConfig = new ConfigFile($"{Paths.ConfigPath}/LDBTool.CustomID.cfg", true);
+        private static ConfigFile CustomID = new ConfigFile($"{Paths.ConfigPath}/LDBTool/LDBTool.CustomID.cfg", true);
+        private static ConfigFile CustomGridIndex = new ConfigFile($"{Paths.ConfigPath}/LDBTool/LDBTool.CustomGridIndex.cfg", true);
+
         private static Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>> IDDict = new Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>>();
+        private static Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>> GridIndexDict = new Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>>();
         private static UIItemTip lastTip;
+
+        /// <summary>
+        /// 用户配置数据绑定
+        /// </summary>
+        private static void Bind(ProtoType protoType, Proto proto)
+        {
+            IdBind(protoType, proto);
+            GridIndexBind(protoType, proto);
+        }
 
         /// <summary>
         /// 通过配置文件绑定ID，允许玩家在冲突时自定义ID
         /// </summary>
-        /// <param name="protoType"></param>
-        /// <param name="proto"></param>
         private static void IdBind(ProtoType protoType, Proto proto)
         {
-            var entry = CustomConfig.Bind<int>(protoType.ToString(), proto.Name, proto.ID);
+            var entry = CustomID.Bind<int>(protoType.ToString(), proto.Name, proto.ID);
             proto.ID = entry.Value;
             if (!IDDict.ContainsKey(protoType))
             {
@@ -94,12 +109,52 @@ namespace xiaoye97
             }
             if (IDDict[protoType].ContainsKey(proto.Name))
             {
-                Debug.LogError($"[LDBTool] Name {proto.Name} already exists.please check mod.");
-                Debug.LogError($"[LDBTool] 姓名 {proto.Name} 已经存在.请检查Mod.");
+                Debug.LogError($"[LDBTool.CustomID]ID:{proto.ID} Name:{proto.Name} There is a conflict, please check.");
+                Debug.LogError($"[LDBTool.CustomID]ID:{proto.ID} 姓名:{proto.Name} 存在冲突，请检查。");
             }
             else
             {
                 IDDict[protoType].Add(proto.Name, entry);
+            }
+        }
+
+        /// <summary>
+        /// 通过配置文件绑定GridIndex，允许玩家在冲突时自定义GridIndex
+        /// 在自定义ID之后执行
+        /// </summary>
+        private static void GridIndexBind(ProtoType protoType, Proto proto)
+        {
+            if(proto is ItemProto || proto is RecipeProto) // 只有物品和配方有GridIndex
+            {
+                ConfigEntry<int> entry = null;
+                if (proto is ItemProto)
+                {
+                    var item = proto as ItemProto;
+                    entry = CustomGridIndex.Bind<int>(protoType.ToString(), item.ID.ToString(), item.GridIndex, $"Item Name = {item.Name}");
+                    item.GridIndex = entry.Value;
+                }
+                else if (proto is RecipeProto)
+                {
+                    var recipe = proto as RecipeProto;
+                    entry = CustomGridIndex.Bind<int>(protoType.ToString(), recipe.ID.ToString(), recipe.GridIndex, $"Recipe Name = {recipe.Name}");
+                    recipe.GridIndex = entry.Value;
+                }
+                if(entry != null)
+                {
+                    if (!GridIndexDict.ContainsKey(protoType))
+                    {
+                        GridIndexDict.Add(protoType, new Dictionary<string, ConfigEntry<int>>());
+                    }
+                    if (GridIndexDict[protoType].ContainsKey(proto.Name))
+                    {
+                        Debug.LogError($"[LDBTool.CustomGridIndex]ID:{proto.ID} Name:{proto.Name} There is a conflict, please check.");
+                        Debug.LogError($"[LDBTool.CustomGridIndex]ID:{proto.ID} 姓名:{proto.Name} 存在冲突，请检查。");
+                    }
+                    else
+                    {
+                        GridIndexDict[protoType].Add(proto.Name, entry);
+                    }
+                }
             }
         }
 
@@ -112,7 +167,7 @@ namespace xiaoye97
         {
             if (!PreToAdd[protoType].Contains(proto))
             {
-                IdBind(protoType, proto);
+                Bind(protoType, proto);
                 PreToAdd[protoType].Add(proto);
                 TotalDict[protoType].Add(proto);
             }
@@ -127,7 +182,7 @@ namespace xiaoye97
         {
             if (!PostToAdd[protoType].Contains(proto))
             {
-                IdBind(protoType, proto);
+                Bind(protoType, proto);
                 PostToAdd[protoType].Add(proto);
                 TotalDict[protoType].Add(proto);
             }

@@ -15,5 +15,14 @@ namespace xiaoye97
                 ShowData(item);
             }
         }
+
+        public static UnityEngine.GUISkin GetRUESkin()
+        {
+            if(SupportsHelper.SupportsRuntimeUnityEditor)
+            {
+                return HarmonyLib.Traverse.Create(SupportsHelper._interfaceMakerType).Property("CustomSkin").GetValue<UnityEngine.GUISkin>();
+            }
+            return null;
+        }
     }
 }
