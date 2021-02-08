@@ -1,15 +1,18 @@
 using BepInEx;
 using HarmonyLib;
 using UnityEngine;
+using BepInEx.Configuration;
 using System.Collections.Generic;
 
 namespace BatchDestruct
 {
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.BatchDestruct", "BatchDestruct", "1.0")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.BatchDestruct", "BatchDestruct", "1.1")]
     public class BatchDestruct : BaseUnityPlugin
     {
+        public static ConfigEntry<float> DestructArea;
         void Start()
         {
+            DestructArea = Config.Bind<float>("config", "DestructArea", 100, "拆除范围");
             Harmony.CreateAndPatchAll(typeof(BatchDestruct));
         }
 
@@ -48,7 +51,7 @@ namespace BatchDestruct
         /// <summary>
         /// 根据物品描述获取实体
         /// </summary>
-        public static List<EntityData> GetEntitysByProto(PlanetFactory factory, ItemProto itemProto)
+        public static List<EntityData> GetEntitysByProto(PlanetFactory factory, ItemProto itemProto, Vector3 castPos)
         {
             List<EntityData> entityList = new List<EntityData>();
             foreach (var entity in factory.entityPool)
@@ -57,7 +60,7 @@ namespace BatchDestruct
                 {
                     if (entity.protoId == itemProto.ID)
                     {
-                        if ((entity.pos - GameMain.data.mainPlayer.position).sqrMagnitude <= GameMain.data.mainPlayer.mecha.buildArea * GameMain.data.mainPlayer.mecha.buildArea)
+                        if ((entity.pos - castPos).sqrMagnitude <= DestructArea.Value * DestructArea.Value)
                         {
                             entityList.Add(entity);
                         }
@@ -79,7 +82,7 @@ namespace BatchDestruct
             }
             _this.previewPose.position = Vector3.zero;
             _this.previewPose.rotation = Quaternion.identity;
-            if (_this.castObjId != 0)
+            if (_this.castObjId > 0)
             {
                 ItemProto itemProto = Traverse.Create(_this).Method("GetItemProto", _this.castObjId).GetValue<ItemProto>();
                 if (itemProto != null)
@@ -93,7 +96,7 @@ namespace BatchDestruct
                     }
                     else
                     {
-                        entityList = GetEntitysByProto(factory, itemProto);
+                        entityList = GetEntitysByProto(factory, itemProto, _this.castObjPos);
                     }
                     for (int i = 0; i < entityList.Count; i++)
                     {
@@ -124,7 +127,7 @@ namespace BatchDestruct
                             buildPreview.lpos2 = objectPose2.position;
                             buildPreview.lrot2 = objectPose2.rotation;
                         }
-                        if ((buildPreview.lpos - _this.player.position).sqrMagnitude > _this.player.mecha.buildArea * _this.player.mecha.buildArea)
+                        if ((buildPreview.lpos - _this.castObjPos).sqrMagnitude > DestructArea.Value * DestructArea.Value)
                         {
                             buildPreview.condition = EBuildCondition.OutOfReach;
                             _this.cursorText = "目标超出范围".Translate();
