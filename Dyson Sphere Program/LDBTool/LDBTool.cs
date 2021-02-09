@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace xiaoye97
 {
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.6")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.7.0")]
     public class LDBToolPlugin : BaseUnityPlugin
     {
         void Awake()
@@ -21,7 +21,7 @@ namespace xiaoye97
                 LDBTool.PostToAdd.Add((ProtoType)i, new List<Proto>());
                 LDBTool.TotalDict.Add((ProtoType)i, new List<Proto>());
             }
-            if(SupportsHelper.SupportsRuntimeUnityEditor)
+            if (SupportsHelper.SupportsRuntimeUnityEditor)
             {
                 ProtoDataUI.Skin = new RUESkin();
             }
@@ -44,7 +44,7 @@ namespace xiaoye97
                 {
                     ProtoDataUI.Show = !ProtoDataUI.Show;
                 }
-                if(SupportsHelper.SupportsRuntimeUnityEditor)
+                if (SupportsHelper.SupportsRuntimeUnityEditor)
                 {
                     if (Input.GetKeyDown(LDBTool.ShowItemProtoHotKey.Value))
                     {
@@ -86,6 +86,76 @@ namespace xiaoye97
         private static Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>> IDDict = new Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>>();
         private static Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>> GridIndexDict = new Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>>();
         private static UIItemTip lastTip;
+        private static Dictionary<int, Dictionary<int, int>> BuildBarDict = new Dictionary<int, Dictionary<int, int>>();
+
+        /// <summary>
+        /// 设置建造快捷栏
+        /// </summary>
+        /// <param name="category">第几栏</param>
+        /// <param name="index">第几个格子</param>
+        /// <param name="itemId">物品ID</param>
+        public static void SetBuildBar(int category, int index, int itemId)
+        {
+            if (category < 1 || category > 12)
+            {
+                Debug.LogWarning("[LDBTool]SetBuildBar Fail. category must be between 1 and 12.");
+                return;
+            }
+            if (index < 1 || index > 12)
+            {
+                Debug.LogWarning("[LDBTool]SetBuildBar Fail. index must be between 1 and 12.");
+                return;
+            }
+            if (Traverse.Create(typeof(UIBuildMenu)).Field("staticLoaded").GetValue<bool>() && Finshed) // 如果已经加载
+            {
+                var item = LDB.items.Select(itemId);
+                if (item != null)
+                {
+                    var protos = Traverse.Create(typeof(UIBuildMenu)).Field("protos").GetValue<ItemProto[,]>();
+                    protos[category, index] = item;
+                    Debug.Log($"[LDBTool] Set build bar at {category},{index} ID:{item.ID} name:{item.Name.Translate()}");
+                    Traverse.Create(typeof(UIBuildMenu)).Field("protos").SetValue(protos);
+                }
+                else
+                {
+                    Debug.LogWarning($"[LDBTool]SetBuildBar Fail. ItemProto with ID {itemId} not found.");
+                    return;
+                }
+            }
+            else
+            {
+                if (!BuildBarDict.ContainsKey(category))
+                {
+                    BuildBarDict.Add(category, new Dictionary<int, int>());
+                }
+                BuildBarDict[category][index] = itemId;
+            }
+        }
+
+        /// <summary>
+        /// 自动设置建造快捷栏
+        /// </summary>
+        private static void SetBuildBar()
+        {
+            var protos = Traverse.Create(typeof(UIBuildMenu)).Field("protos").GetValue<ItemProto[,]>();
+            foreach (var kv in BuildBarDict)
+            {
+                foreach (var kv2 in kv.Value)
+                {
+                    var item = LDB.items.Select(kv2.Value);
+                    if (item != null)
+                    {
+                        protos[kv.Key, kv2.Key] = item;
+                        Debug.Log($"[LDBTool] Set build bar at {kv.Key},{kv2.Key} ID:{item.ID} name:{item.Name.Translate()}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[LDBTool]SetBuildBar Fail. ItemProto with ID {kv2.Value} not found.");
+                    }
+                }
+            }
+            Traverse.Create(typeof(UIBuildMenu)).Field("protos").SetValue(protos);
+        }
 
         /// <summary>
         /// 用户配置数据绑定
@@ -124,7 +194,7 @@ namespace xiaoye97
         /// </summary>
         private static void GridIndexBind(ProtoType protoType, Proto proto)
         {
-            if(proto is ItemProto || proto is RecipeProto) // 只有物品和配方有GridIndex
+            if (proto is ItemProto || proto is RecipeProto) // 只有物品和配方有GridIndex
             {
                 ConfigEntry<int> entry = null;
                 if (proto is ItemProto)
@@ -139,7 +209,7 @@ namespace xiaoye97
                     entry = CustomGridIndex.Bind<int>(protoType.ToString(), recipe.ID.ToString(), recipe.GridIndex, $"Recipe Name = {recipe.Name}");
                     recipe.GridIndex = entry.Value;
                 }
-                if(entry != null)
+                if (entry != null)
                 {
                     if (!GridIndexDict.ContainsKey(protoType))
                     {
@@ -268,6 +338,7 @@ namespace xiaoye97
             }
             GameMain.iconSet.loaded = false;
             GameMain.iconSet.Create();
+            SetBuildBar();
             Finshed = true;
             Debug.Log("[LDBTool]Done.");
         }
