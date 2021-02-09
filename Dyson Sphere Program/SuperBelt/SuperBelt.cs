@@ -5,28 +5,62 @@ using HarmonyLib;
 using UnityEngine;
 using System.Linq;
 using System.Reflection;
+using BepInEx.Configuration;
 using System.Collections.Generic;
 
 namespace SuperBelt
 {
-    [BepInDependency("me.xiaoye97.plugin.Dyson.LDBTool", BepInDependency.DependencyFlags.HardDependency)]
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.SuperBelt", "SuperBelt", "1.2.2")]
+    [BepInDependency("me.xiaoye97.plugin.Dyson.LDBTool", "1.7.0")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.SuperBelt", "SuperBelt", "1.3.0")]
     public class SuperBelt : BaseUnityPlugin
     {
         Sprite belt4Icon, belt5Icon;
         Color belt4Color = new Color(129 / 255f, 103 / 255f, 246 / 255f);
         Color belt5Color = new Color(1, 65 / 255f, 63 / 255f);
-
+        public static ConfigEntry<bool> CanUpgrade3to4, CanUpgrade4to5;
         void Start()
         {
+            CanUpgrade3to4 = Config.Bind<bool>("config", "CanUpgrade3to4", true);
+            CanUpgrade4to5 = Config.Bind<bool>("config", "CanUpgrade4to5", true);
             LDBTool.PreAddDataAction += AddTranslate;
             LDBTool.PostAddDataAction += AddBeltData;
+            LDBTool.EditDataAction += Edit;
+            SetBuildBar();
             var ab = AssetBundle.LoadFromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("SuperBelt.belt"));
             belt4Icon = ab.LoadAsset<Sprite>("belt-4");
             belt5Icon = ab.LoadAsset<Sprite>("belt-5");
             Harmony.CreateAndPatchAll(typeof(SuperBelt));
         }
 
+        /// <summary>
+        /// 修改传送带升级
+        /// </summary>
+        void Edit(Proto proto)
+        {
+            if (proto is ItemProto)
+            {
+                var item = proto as ItemProto;
+                if (item.prefabDesc.isBelt)
+                {
+                    if (CanUpgrade3to4.Value && CanUpgrade3to4.Value)
+                    {
+                        item.Upgrades = new int[] { 2001, 2002, 2003, 2004, 2005 };
+                    }
+                    else if (CanUpgrade3to4.Value)
+                    {
+                        item.Upgrades = new int[] { 2001, 2002, 2003, 2004 };
+                    }
+                    else if (CanUpgrade4to5.Value && item.ID == 2004)
+                    {
+                        item.Upgrades = new int[] { 2001, 2002, 2003, 2004, 2005 };
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 添加翻译
+        /// </summary>
         void AddTranslate()
         {
             // 添加翻译
@@ -41,7 +75,7 @@ namespace SuperBelt
             descString.ID = 10002;
             descString.Name = "超级传送带MKI描述";
             descString.name = "超级传送带MKI描述";
-            descString.ZHCN = "比急速传送带更强力的设备，有效升级你的工厂！";
+            descString.ZHCN = "比极速传送带更强力！";
             descString.ENUS = "It can transport items at 60/s!";
             descString.FRFR = "It can transport items at 60/s!";
             StringProto nameString2 = new StringProto();
@@ -55,7 +89,7 @@ namespace SuperBelt
             descString2.ID = 10004;
             descString2.Name = "超级传送带MKII描述";
             descString2.name = "超级传送带MKII描述";
-            descString2.ZHCN = "终极传送带！";
+            descString2.ZHCN = "要不要来跑一圈赤道?";
             descString2.ENUS = "It can transport items at 120/s!";
             descString2.FRFR = "It can transport items at 120/s!";
             LDBTool.PreAddProto(ProtoType.String, nameString);
@@ -64,6 +98,9 @@ namespace SuperBelt
             LDBTool.PreAddProto(ProtoType.String, descString2);
         }
 
+        /// <summary>
+        /// 添加传送带数据
+        /// </summary>
         void AddBeltData()
         {
             // 因为部分数据可以复用，所以直接从现有库中读取
@@ -95,7 +132,7 @@ namespace SuperBelt
             belt4.description = "超级传送带MKI描述".Translate();
             belt4.ID = 2004;
             belt4.makes = new List<RecipeProto>();
-            belt4.BuildIndex = 351; // 不要和现有序号重复
+            belt4.BuildIndex = 304; // 不要和现有序号重复
             belt4.GridIndex = belt4r.GridIndex;
             belt4.handcraft = belt4r;
             belt4.maincraft = belt4r;
@@ -105,6 +142,8 @@ namespace SuperBelt
             belt4.prefabDesc.modelIndex = belt4.ModelIndex;
             belt4.prefabDesc.beltSpeed = 10;
             belt4.prefabDesc.beltPrototype = 2004;
+            belt4.prefabDesc.isBelt = true;
+            belt4.Grade = 4;
 
             // MK.II
             Traverse.Create(belt5).Field("_iconSprite").SetValue(belt5Icon);
@@ -126,7 +165,7 @@ namespace SuperBelt
             belt5.description = "超级传送带MKII描述".Translate();
             belt5.ID = 2005;
             belt5.makes = new List<RecipeProto>();
-            belt5.BuildIndex = 352; // 不要和现有序号重复
+            belt5.BuildIndex = 305; // 不要和现有序号重复
             belt5.GridIndex = belt5r.GridIndex;
             belt5.handcraft = belt5r;
             belt5.maincraft = belt5r;
@@ -136,12 +175,27 @@ namespace SuperBelt
             belt5.prefabDesc.modelIndex = belt5.ModelIndex;
             belt5.prefabDesc.beltSpeed = 20;
             belt5.prefabDesc.beltPrototype = 2005;
+            belt5.prefabDesc.isBelt = true;
+            belt5.Grade = 5;
 
             LDBTool.PostAddProto(ProtoType.Recipe, belt4r);
             LDBTool.PostAddProto(ProtoType.Item, belt4);
             LDBTool.PostAddProto(ProtoType.Recipe, belt5r);
             LDBTool.PostAddProto(ProtoType.Item, belt5);
             AddMatAndMesh();
+        }
+
+        /// <summary>
+        /// 设置快捷栏
+        /// </summary>
+        void SetBuildBar()
+        {
+            LDBTool.SetBuildBar(3, 4, 2004);
+            LDBTool.SetBuildBar(3, 5, 2005);
+            LDBTool.SetBuildBar(3, 6, 2011);
+            LDBTool.SetBuildBar(3, 7, 2012);
+            LDBTool.SetBuildBar(3, 8, 2013);
+            LDBTool.SetBuildBar(3, 9, 2020);
         }
 
         #region Belt Color
@@ -300,28 +354,28 @@ namespace SuperBelt
         }
         #endregion
 
-        #region speed bug fix
+        #region Speed bug fix
         [HarmonyPrefix, HarmonyPatch(typeof(CargoPath), "Update")]
         public static bool CargoPathPatch(CargoPath __instance)
         {
             var _this = __instance;
             if (_this.outputPath != null)
             {
-                int num = _this.bufferLength - 5 - 1;
-                if (_this.buffer[num] == 250)
+                int Sign = _this.bufferLength - 5 - 1;
+                if (_this.buffer[Sign] == 250)
                 {
-                    int cargoId = (int)(_this.buffer[num + 1] - 1 + (_this.buffer[num + 2] - 1) * 100) + (int)(_this.buffer[num + 3] - 1) * 10000 + (int)(_this.buffer[num + 4] - 1) * 1000000;
-                    if (_this.closed)
+                    int cargoId = (int)(_this.buffer[Sign + 1] - 1 + (_this.buffer[Sign + 2] - 1) * 100) + (int)(_this.buffer[Sign + 3] - 1) * 10000 + (int)(_this.buffer[Sign + 4] - 1) * 1000000;
+                    if (_this.closed) // 线路闭合
                     {
                         if (_this.outputPath.TryInsertCargoNoSqueeze(_this.outputIndex, cargoId))
                         {
-                            Array.Clear(_this.buffer, num - 4, 10);
+                            Array.Clear(_this.buffer, Sign - 4, 10);
                             _this.updateLen = _this.bufferLength;
                         }
                     }
                     else if (_this.outputPath.TryInsertCargo(_this.outputIndex, cargoId))
                     {
-                        Array.Clear(_this.buffer, num - 4, 10);
+                        Array.Clear(_this.buffer, Sign - 4, 10);
                         _this.updateLen = _this.bufferLength;
                     }
                 }
@@ -329,14 +383,12 @@ namespace SuperBelt
             else if (_this.bufferLength <= 10) return false;
             if (!_this.closed)
             {
-                int num2 = _this.bufferLength - 1;
-                if (_this.buffer[num2] != 255 && _this.buffer[num2] != 0)
+                int Rear = _this.bufferLength - 1;
+                if (_this.buffer[Rear] != 255 && _this.buffer[Rear] != 0)
                 {
-                    Assert.CannotBeReached(string.Concat(new object[]
-                    {
-                        "Corrupt cargo path rear! ", _this.id, " ", num2
-                    }));
-                    for (int i = num2; i >= 0; i--)
+                    Debug.Log($"传送带末尾异常! {_this.id} {Rear}");
+                    // 清空异常数据
+                    for (int i = Rear; i >= 0; i--)
                     {
                         if (_this.buffer[i] == 246)
                         {
@@ -354,66 +406,118 @@ namespace SuperBelt
                 _this.updateLen--;
             }
             if (_this.updateLen == 0) return false;
-            int num3 = _this.updateLen;
+            int len = _this.updateLen;
             for (int k = _this.chunkCount - 1; k >= 0; k--)
             {
-                int num4 = _this.chunks[k * 3];
-                int num5 = _this.chunks[k * 3 + 2];
-                if (num4 < num3)
+                int begin = _this.chunks[k * 3];
+                int speed = _this.chunks[k * 3 + 2];
+                if (begin < len)
                 {
-                    if (_this.buffer[num4] != 0)
+                    if (_this.buffer[begin] != 0)
                     {
-                        for (int l = num4 - 5; l < num4 + 4; l++)
+                        for (int l = begin - 5; l < begin + 4; l++)
                         {
                             if (l >= 0)
                             {
                                 if (_this.buffer[l] == 250)
                                 {
-                                    if (l < num4)
-                                    {
-                                        int num6 = l + 5 + 1;
-                                        num4 = num6;
-                                    }
-                                    else
-                                    {
-                                        int num7 = l - 4;
-                                        num4 = num7;
-                                    }
+                                    if (l < begin) begin = l + 5 + 1;
+                                    else begin = l - 4;
                                     break;
                                 }
                             }
                         }
                     }
-                    int m = 0;
-                    while (m < num5)
+                    if (speed > 10) // 如果速度大于10，则进行长度判断处理,防止越界
                     {
-                        int num8 = num3 - num4;
-                        if (num8 < 10) break;
-                        int num9 = 0;
-                        for (int n = 0; n < num5 - m; n++)
+                        for (int i = 10; i <= speed; i++)
                         {
-                            int num10 = num3 - 1 - n;
-                            if (num10 < 0 || num10 >= _this.buffer.Length) break;
-                            if (_this.buffer[num10] != 0) break;
+                            if (begin + i + 10 >= _this.bufferLength) // 即将离开传送带尽头
+                            {
+                                speed = i;
+                                break;
+                            }
+                            else
+                            {
+                                if (_this.buffer[begin + i] != 0) // 速度范围内不为空
+                                {
+                                    speed = i;
+                                    break;
+                                }
+                            }
+                        }
+                        if (speed < 10)
+                        {
+                            speed = 10; // 如果速度减速到安全速度以内，设定为安全速度
+                        }
+                    }
+                    int m = 0;
+                    while (m < speed)
+                    {
+                        int num8 = len - begin;
+                        if (num8 < 10) // 移动结束
+                        {
+                            break;
+                        }
+                        int num9 = 0;
+                        for (int n = 0; n < speed - m; n++)
+                        {
+                            if (_this.buffer[len - 1 - n] != 0) break;
                             num9++;
                         }
                         if (num9 > 0)
                         {
-                            if (num8 - num9 > 0) Array.Copy(_this.buffer, num4, _this.buffer, num4 + num9, num8 - num9);
-                            Array.Clear(_this.buffer, num4, num9);
+                            Array.Copy(_this.buffer, begin, _this.buffer, begin + num9, num8 - num9);
+                            Array.Clear(_this.buffer, begin, num9);
                             m += num9;
                         }
-                        for (int num11 = num3 - 1; num11 >= 0; num11--)
+                        for (int num11 = len - 1; num11 >= 0; num11--)
                         {
                             if (_this.buffer[num11] == 0) break;
-                            num3--;
+                            len--;
                         }
                     }
-                    int num12 = num4 + ((m != 0) ? m : 1);
-                    if (num3 > num12) num3 = num12;
+                    int num12 = begin + ((m != 0) ? m : 1);
+                    if (len > num12)
+                    {
+                        len = num12;
+                    }
                 }
             }
             return false;
+        }
+        #endregion
+
+        #region Belt determine more fix
+        public static bool StartDetermine;
+        [HarmonyPrefix, HarmonyPatch(typeof(PlayerAction_Build), "DetermineMoreChainTargets")]
+        public static bool BatchPre()
+        {
+            StartDetermine = true;
+            return true;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(PlayerAction_Build), "DetermineMoreChainTargets")]
+        public static void BatchPost(PlayerAction_Build __instance)
+        {
+            StartDetermine = false;
+        }
+
+        [HarmonyPrefix, HarmonyPatch(typeof(PlayerAction_Build), "GetPrefabDesc")]
+        public static bool GetPrefabDescPatch(PlayerAction_Build __instance, int objId, ref PrefabDesc __result)
+        {
+            if (StartDetermine)
+            {
+                var _this = __instance;
+                var item = Traverse.Create(_this).Method("GetItemProto", objId).GetValue<ItemProto>();
+                if (item == null) __result = null;
+                else __result = item.prefabDesc;
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         }
         #endregion
     }
