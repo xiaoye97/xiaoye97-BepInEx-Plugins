@@ -103,14 +103,15 @@ namespace AdvancedBuildDestruct
             }
         }
 
-        static bool begin;
+        public static bool begin;
         static Vector3 beginPos;
         static Vector3[] snaps = new Vector3[256];
 
         public static void DetermineBuildPreviews(PlayerAction_Build _this)
         {
-            if (Input.GetKeyDown(AdvancedBuildDestruct.BuildKey.Value))
+            if (AdvancedBuildDestruct.buildKeyUp)
             {
+                AdvancedBuildDestruct.buildKeyUp = false;
                 beginPos = _this.groundSnappedPos;
                 begin = !begin;
             }
@@ -164,8 +165,10 @@ namespace AdvancedBuildDestruct
                         if (dis < 12.25f) continue;
                         if (desc.isPowerNode && !desc.isAccumulator)
                         {
-                            if (desc.windForcedPower && dis < 110.25f) continue;
+                            if (desc.windForcedPower && dis < 110.25f) continue; // 风力发电机
+                            if (_this.handItem.ModelIndex == 73 && dis < 110.25f) continue; // 射线接收站
                         }
+
                         // 物流站
                         // Debug.Log("判断物流站");
                         if (desc.isStation)
@@ -212,6 +215,7 @@ namespace AdvancedBuildDestruct
                             }
                         }
                     }
+                    i += AdvancedBuildDestruct.BuildExtraSpacing.Value;
                     _this.AddBuildPreview(BuildPreview.CreateSingle(_this.handItem, _this.handPrefabDesc, true));
                     posList.Add(snaps[i]);
                     if (desc.hasBuildCollider)
@@ -553,18 +557,18 @@ namespace AdvancedBuildDestruct
             }
         }
 
-        [HarmonyTranspiler, HarmonyPatch(typeof(PlayerAction_Build), "CheckBuildConditions")]
-        public static IEnumerable<CodeInstruction> CheckPatch(IEnumerable<CodeInstruction> instructions)
-        {
-            var codes = instructions.ToList();
-            codes[1881].operand = 200f;
-            return codes.AsEnumerable();
-        }
+        //[HarmonyTranspiler, HarmonyPatch(typeof(PlayerAction_Build), "CheckBuildConditions")]
+        //public static IEnumerable<CodeInstruction> CheckPatch(IEnumerable<CodeInstruction> instructions)
+        //{
+        //    var codes = instructions.ToList();
+        //    codes[1881].operand = 200f;
+        //    return codes.AsEnumerable();
+        //}
 
         /// <summary>
         /// 检查碰撞，如果撞到，则返回false
         /// </summary>
-        public static bool CheckBox(ColliderData c1, ColliderData c2, float mul = 1f, float x = 1, float y = 1, float z = 1)
+        public static bool CheckBox(ColliderData c1, ColliderData c2, float mul = 1f)
         {
             c1.ext *= mul;
             c2.ext *= mul;

@@ -74,7 +74,6 @@ namespace AdvancedBuildDestruct
             {
                 ItemProto itemProto = _this.GetItemProto(_this.castObjId);
                 if (itemProto.prefabDesc.isBelt) return true; // 如果是传送带，则调用原版函数
-
                 if (itemProto != null)
                 {
                     _this.ClearBuildPreviews();
