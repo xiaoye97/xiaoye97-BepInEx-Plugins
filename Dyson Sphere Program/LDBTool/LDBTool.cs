@@ -4,13 +4,12 @@ using HarmonyLib;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Reflection;
 using BepInEx.Configuration;
 using System.Collections.Generic;
 
 namespace xiaoye97
 {
-    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.7.0")]
+    [BepInPlugin("me.xiaoye97.plugin.Dyson.LDBTool", "LDBTool", "1.8.0")]
     public class LDBToolPlugin : BaseUnityPlugin
     {
         void Awake()
@@ -82,9 +81,16 @@ namespace xiaoye97
         private static bool Finshed;
         private static ConfigFile CustomID = new ConfigFile($"{Paths.ConfigPath}/LDBTool/LDBTool.CustomID.cfg", true);
         private static ConfigFile CustomGridIndex = new ConfigFile($"{Paths.ConfigPath}/LDBTool/LDBTool.CustomGridIndex.cfg", true);
+        private static ConfigFile CustomStringZHCN = new ConfigFile($"{Paths.ConfigPath}/LDBTool/LDBTool.CustomLocalization.ZHCN.cfg", true);
+        private static ConfigFile CustomStringENUS = new ConfigFile($"{Paths.ConfigPath}/LDBTool/LDBTool.CustomLocalization.ENUS.cfg", true);
+        private static ConfigFile CustomStringFRFR = new ConfigFile($"{Paths.ConfigPath}/LDBTool/LDBTool.CustomLocalization.FRFR.cfg", true);
 
         private static Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>> IDDict = new Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>>();
         private static Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>> GridIndexDict = new Dictionary<ProtoType, Dictionary<string, ConfigEntry<int>>>();
+        private static Dictionary<ProtoType, Dictionary<string, ConfigEntry<string>>> ZHCNDict = new Dictionary<ProtoType, Dictionary<string, ConfigEntry<string>>>();
+        private static Dictionary<ProtoType, Dictionary<string, ConfigEntry<string>>> ENUSDict = new Dictionary<ProtoType, Dictionary<string, ConfigEntry<string>>>();
+        private static Dictionary<ProtoType, Dictionary<string, ConfigEntry<string>>> FRFRDict = new Dictionary<ProtoType, Dictionary<string, ConfigEntry<string>>>();
+
         private static UIItemTip lastTip;
         private static Dictionary<int, Dictionary<int, int>> BuildBarDict = new Dictionary<int, Dictionary<int, int>>();
 
@@ -164,6 +170,7 @@ namespace xiaoye97
         {
             IdBind(protoType, proto);
             GridIndexBind(protoType, proto);
+            StringBind(protoType, proto);
         }
 
         /// <summary>
@@ -224,6 +231,54 @@ namespace xiaoye97
                     {
                         GridIndexDict[protoType].Add(proto.Name, entry);
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 通过配置文件绑定翻译文件，允许玩家在翻译缺失或翻译不准确时自定义翻译
+        /// </summary>
+        private static void StringBind(ProtoType protoType, Proto proto)
+        {
+            if (proto is StringProto)
+            {
+                var lang = proto as StringProto;
+                ConfigEntry<string> zhcn, enus, frfr;
+                zhcn = CustomStringZHCN.Bind<string>(protoType.ToString(), lang.ID.ToString(), lang.ZHCN, lang.Name);
+                enus = CustomStringENUS.Bind<string>(protoType.ToString(), lang.ID.ToString(), lang.ENUS, lang.Name);
+                frfr = CustomStringFRFR.Bind<string>(protoType.ToString(), lang.ID.ToString(), lang.FRFR, lang.Name);
+                lang.ZHCN = zhcn.Value;
+                lang.ENUS = enus.Value;
+                lang.FRFR = frfr.Value;
+                if (zhcn != null)
+                {
+                    if (!ZHCNDict.ContainsKey(protoType)) ZHCNDict.Add(protoType, new Dictionary<string, ConfigEntry<string>>());
+                    if (ZHCNDict[protoType].ContainsKey(proto.Name))
+                    {
+                        Debug.LogError($"[LDBTool.CustomLocalization.ZHCN]ID:{proto.ID} Name:{proto.Name} There is a conflict, please check.");
+                        Debug.LogError($"[LDBTool.CustomLocalization.ZHCN]ID:{proto.ID} 姓名:{proto.Name} 存在冲突，请检查。");
+                    }
+                    else ZHCNDict[protoType].Add(proto.Name, zhcn);
+                }
+                if (ENUSDict != null)
+                {
+                    if (!ENUSDict.ContainsKey(protoType)) ENUSDict.Add(protoType, new Dictionary<string, ConfigEntry<string>>());
+                    if (ENUSDict[protoType].ContainsKey(proto.Name))
+                    {
+                        Debug.LogError($"[LDBTool.CustomLocalization.ENUS]ID:{proto.ID} Name:{proto.Name} There is a conflict, please check.");
+                        Debug.LogError($"[LDBTool.CustomLocalization.ENUS]ID:{proto.ID} 姓名:{proto.Name} 存在冲突，请检查。");
+                    }
+                    else ENUSDict[protoType].Add(proto.Name, enus);
+                }
+                if (frfr != null)
+                {
+                    if (!FRFRDict.ContainsKey(protoType)) FRFRDict.Add(protoType, new Dictionary<string, ConfigEntry<string>>());
+                    if (FRFRDict[protoType].ContainsKey(proto.Name))
+                    {
+                        Debug.LogError($"[LDBTool.CustomLocalization.FRFR]ID:{proto.ID} Name:{proto.Name} There is a conflict, please check.");
+                        Debug.LogError($"[LDBTool.CustomLocalization.FRFR]ID:{proto.ID} 姓名:{proto.Name} 存在冲突，请检查。");
+                    }
+                    else FRFRDict[protoType].Add(proto.Name, frfr);
                 }
             }
         }
