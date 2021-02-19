@@ -142,7 +142,7 @@ namespace AdvancedBuildDestruct
         [HarmonyPrefix, HarmonyPatch(typeof(UIKeyTips), "UpdateTipDesiredState")]
         public static void UpdateTipDesiredStatePatch(UIKeyTips __instance, ref List<UIKeyTipNode> ___allTips)
         {
-            if (!tipPlus)
+            if (!tipBuildToggle)
             {
                 allTips = ___allTips;
                 tipBuildToggle = __instance.RegisterTip("ALT", "Toggle repeated build");
