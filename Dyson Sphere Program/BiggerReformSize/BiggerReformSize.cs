@@ -6,11 +6,12 @@ using System.Collections.Generic;
 
 namespace BiggerReformSize
 {
-    [BepInPlugin("me.xiaoye97.plugin.Dsyon.BiggerReformSize", "BiggerReformSize", "1.0")]
+    [BepInPlugin("me.xiaoye97.plugin.Dsyon.BiggerReformSize", "BiggerReformSize", "1.1")]
     public class BiggerReformSize : BaseUnityPlugin
     {
         private const int size = 20;
-        void Start()
+
+        private void Start()
         {
             Harmony.CreateAndPatchAll(typeof(BiggerReformSize));
         }
@@ -27,12 +28,12 @@ namespace BiggerReformSize
         {
             UnityEngine.Debug.Log("[BiggerReformSize]Patch PlayerAction_Build.DetermineBuildPreviews");
             var codes = instructions.ToList();
-            codes[4803].opcode = OpCodes.Ldc_I4_S;
-            codes[4803].operand = size;
-            codes[4806].opcode = OpCodes.Ldc_I4_S;
-            codes[4806].operand = size;
-            codes[4852].opcode = OpCodes.Ldc_I4_S;
-            codes[4852].operand = size;
+            codes[4804].opcode = OpCodes.Ldc_I4_S;
+            codes[4804].operand = size;
+            codes[4807].opcode = OpCodes.Ldc_I4_S;
+            codes[4807].operand = size;
+            codes[4853].opcode = OpCodes.Ldc_I4_S;
+            codes[4853].operand = size;
             return codes.AsEnumerable();
         }
     }
