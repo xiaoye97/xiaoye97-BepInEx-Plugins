@@ -7,13 +7,15 @@
 - RuntimeUnityEditorAddion运行时编辑器扩展
 
 #### Dyson Sphere Program戴森球计划
-- BetterStart更好的初始
+- ~~AdvancedBuildDestruct高级建造拆除~~
+- ~~BetterStart更好的初始~~
+- ~~PressingBuild连续建造~~
+- ~~BatchDestruct批量拆除~~
 - BiggerReformSize更大的地基面积
-- PressingBuild连续建造
-- BatchDestruct批量拆除
 - DysonSphereBlueprint戴森球蓝图
 - LDBTool数据前置
 - SuperBelt超级传送带
+- BiggerBuildRange更大建造范围
 
 #### 觅长生
 - BetterSelectNum更好的数量选择
