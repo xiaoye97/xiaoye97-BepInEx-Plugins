@@ -1,40 +1,25 @@
-﻿using Oc;
 using BepInEx;
-using Oc.Item.UI;
 using HarmonyLib;
+using Oc;
+using Oc.Item.UI;
 
 namespace BigInventory
 {
-    [BepInPlugin("me.xiaoye97.plugin.Craftopia.BigInventory", "大背包", "1.1")]
+    [BepInPlugin("com.github.xiaoye97.plugin.Craftopia.BigInventory", "BigInventory", "1.0")]
     public class BigInventory : BaseUnityPlugin
     {
         public static int InventorySize = 64;
 
-        void Start()
+        private void Start()
         {
-            new Harmony("me.xiaoye97.plugin.Craftopia.BigInventory").PatchAll();
+            Harmony.CreateAndPatchAll(typeof(BigInventory));
         }
 
-        [HarmonyPatch(typeof(OcGameMng), "OnGameSceneSetUpFinish")]
-        class InventoryPatch
+        [HarmonyPostfix, HarmonyPatch(typeof(OcItemUI_Cell_List_Inventory), "ConvertFromSaveData")]
+        public static void GamePatch(OcItemUI_Cell_List_Inventory __instance)
         {
-            public static void Postfix()
-            {
-                FixInventory();
-            }
-        }
-
-        public static void FixInventory()
-        {
-            var inst = SingletonMonoBehaviour<OcItemUI_InventoryMng>.Inst;
-            if (inst != null)
-            {
-                Traverse.Create(inst).Field("equipmentList").Method("SetSize", InventorySize).GetValue();
-                Traverse.Create(inst).Field("consumptionList").Method("SetSize", InventorySize).GetValue();
-                Traverse.Create(inst).Field("materialList").Method("SetSize", InventorySize).GetValue();
-                Traverse.Create(inst).Field("relicList").Method("SetSize", InventorySize).GetValue();
-                Traverse.Create(inst).Field("buildingList").Method("SetSize", InventorySize).GetValue();
-            }
+            Debug.Log($"设置背包{__instance.name}的大小到{InventorySize}");
+            __instance.SetSize(InventorySize);
         }
     }
 }
