@@ -40,7 +40,7 @@ namespace MCSLiHui
             {
                 if (PlayerEx.Player != null && !hideScenes.Contains(SceneEx.NowSceneName))
                 {
-                    winRect = GUILayout.Window(654321, winRect, WindowFunc, "设置NPC立绘");
+                    winRect = GUILayout.Window(654321, winRect, WindowFunc, "自定义立绘Mod");
                 }
             }
         }
@@ -98,13 +98,14 @@ namespace MCSLiHui
         public void InfoGUI()
         {
             GUILayout.BeginVertical("说明(视频教程关注B站 宵夜97)", GUI.skin.window);
-            GUILayout.Label("注意！修改立绘编号必须保证已经将立绘按照格式放入游戏文件夹!");
             GUILayout.Label("放入立绘流程:");
             GUILayout.Label("1.在steam右键游戏->管理->浏览本地文件");
-            GUILayout.Label("2.在游戏根目录建立文件夹ModRes/Effect/Prefab/gameEntity/Avater");
+            GUILayout.Label("2.打开ModRes/Effect/Prefab/gameEntity/Avater文件夹(Mod会创建此文件夹)");
             GUILayout.Label("3.根据自定义的立绘编号(10000以上)在Avater下建立文件夹，如编号为10001，则建的文件夹名为Avater10001");
             GUILayout.Label("4.将PNG格式立绘图片放入建好的文件夹，并将文件名改为编号");
-            GUILayout.Label("注:官方的立绘尺寸为1255x1408，在准备立绘时，要裁切成这个尺寸，并且脸的位置和模板人物对齐");
+            GUILayout.Label("注1:官方的立绘尺寸为1255x1408，在准备立绘时，要裁切成这个尺寸，并且脸的位置和模板人物对齐");
+            GUILayout.Label("注2:立绘模板在觅长生/觅长生test_Data/Res/Effect/Prefab/gameEntity/Avater/Avater10001/10001.png");
+            GUILayout.Label("注3:自定义玩家立绘还在做，以后有时间再更新");
             GUILayout.EndVertical();
         }
     }
