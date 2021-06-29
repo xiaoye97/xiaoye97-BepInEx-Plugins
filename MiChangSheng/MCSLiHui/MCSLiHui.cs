@@ -66,6 +66,10 @@ namespace MCSLiHui
             if (GUILayout.Button("修改立绘"))
             {
                 PlayerEx.Player.Face = new JSONObject(int.Parse(facePlayerInput));
+                if (UIHeadPanel.Inst != null)
+                {
+                    UIHeadPanel.Inst.Face.setFace();
+                }
             }
             GUILayout.EndVertical();
         }
