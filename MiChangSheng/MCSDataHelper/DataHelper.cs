@@ -1,17 +1,17 @@
-﻿using System;
 using BepInEx;
-using System.IO;
-using HarmonyLib;
-using UnityEngine;
 using BepInEx.Configuration;
+using HarmonyLib;
 using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
 
 namespace MCSDataHelper
 {
-    [BepInPlugin("me.xiaoye97.plugin.MiChangSheng.MCSDataHelper", "觅长生数据前置", "1.0")]
+    [BepInPlugin("me.xiaoye97.plugin.MiChangSheng.MCSDataHelper", "觅长生数据前置", "1.1")]
     public class DataHelper : BaseUnityPlugin
     {
         public static ConfigEntry<bool> DumpConfig;
+
         public static KBEngine.Avatar Player
         {
             get { return Tools.instance.getPlayer(); }
@@ -21,7 +21,7 @@ namespace MCSDataHelper
 
         private static Dictionary<string, Texture2D> TexDict = new Dictionary<string, Texture2D>();
 
-        void Awake()
+        private void Awake()
         {
             DumpConfig = Config.Bind<bool>("config", "EnableDump", true, "是否开启数据转储");
             Harmony.CreateAndPatchAll(typeof(DataPatch));
@@ -77,6 +77,7 @@ namespace MCSDataHelper
         }
 
         #region 存档扩展
+
         public static void SetSaveData(string pluginId, string key, string data)
         {
             if (Player == null) return;
@@ -126,6 +127,7 @@ namespace MCSDataHelper
             }
             return null;
         }
-        #endregion
+
+        #endregion 存档扩展
     }
 }

@@ -1,5 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -67,6 +65,14 @@ namespace MCSDataHelper
         public static Color GetQualityColor(this JSONObject item)
         {
             return GetItemQualityColor(item);
+        }
+
+        /// <summary>
+        /// 获取物品品质颜色
+        /// </summary>
+        public static Color GetQualityColor(this JSONClass._ItemJsonData item)
+        {
+            return QualityColors[item.quality - 1];
         }
     }
 }
