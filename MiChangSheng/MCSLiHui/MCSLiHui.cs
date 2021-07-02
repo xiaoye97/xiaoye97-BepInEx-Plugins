@@ -6,7 +6,7 @@ using System.IO;
 
 namespace MCSLiHui
 {
-    [BepInPlugin("me.xiaoye97.plugin.MiChangSheng.MCSLiHui", "自定义立绘", "1.0")]
+    [BepInPlugin("me.xiaoye97.plugin.MiChangSheng.MCSLiHui", "自定义立绘", "1.1")]
     public class MCSLiHui : BaseUnityPlugin
     {
         private bool show;
@@ -49,7 +49,7 @@ namespace MCSLiHui
         {
             GUILayout.BeginVertical(GUILayout.ExpandHeight(true));
             InfoGUI();
-            //PlayerGUI();
+            PlayerGUI();
             NPCGUI();
             GUILayout.EndVertical();
             GUI.DragWindow();
@@ -57,15 +57,19 @@ namespace MCSLiHui
 
         public void PlayerGUI()
         {
-            GUILayout.BeginVertical("玩家立绘(尚未完成)", GUI.skin.window);
-            GUILayout.Label($"玩家当前立绘:{jsonData.instance.AvatarJsonData["1"]["face"].I}");
+            GUILayout.BeginVertical("玩家立绘", GUI.skin.window);
+            GUILayout.Label($"玩家当前立绘:{PlayerEx.Player.Face.I}");
             GUILayout.BeginHorizontal();
             GUILayout.Label("设置立绘编号", GUILayout.Width(200));
             facePlayerInput = GUILayout.TextField(facePlayerInput);
             GUILayout.EndHorizontal();
             if (GUILayout.Button("修改立绘"))
             {
-                jsonData.instance.AvatarJsonData["1"].SetField("face", int.Parse(facePlayerInput));
+                PlayerEx.Player.Face = new JSONObject(int.Parse(facePlayerInput));
+                if (UIHeadPanel.Inst != null)
+                {
+                    UIHeadPanel.Inst.Face.setFace();
+                }
             }
             GUILayout.EndVertical();
         }
@@ -105,7 +109,6 @@ namespace MCSLiHui
             GUILayout.Label("4.将PNG格式立绘图片放入建好的文件夹，并将文件名改为编号");
             GUILayout.Label("注1:官方的立绘尺寸为1255x1408，在准备立绘时，要裁切成这个尺寸，并且脸的位置和模板人物对齐");
             GUILayout.Label("注2:立绘模板在觅长生/觅长生test_Data/Res/Effect/Prefab/gameEntity/Avater/Avater10001/10001.png");
-            GUILayout.Label("注3:自定义玩家立绘还在做，以后有时间再更新");
             GUILayout.EndVertical();
         }
     }
