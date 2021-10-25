@@ -18,9 +18,9 @@ namespace MCSDataHelper
         {
             if (DataHelper.DumpConfig.Value) // 转储数据
             {
-                if (!Directory.Exists($"{Paths.GameRootPath}/Dump"))
+                if (!Directory.Exists($"{BepInEx.Paths.GameRootPath}/Dump"))
                 {
-                    Directory.CreateDirectory($"{Paths.GameRootPath}/Dump");
+                    Directory.CreateDirectory($"{BepInEx.Paths.GameRootPath}/Dump");
                 }
                 TextAsset textAsset = (TextAsset)Resources.Load(path);
                 if (textAsset != null)
@@ -29,7 +29,7 @@ namespace MCSDataHelper
                     string fileName = tmp[tmp.Length - 1];
                     Debug.Log($"转储：{fileName}");
                     string text = textAsset.text.UnCode64();
-                    File.WriteAllText($"{Paths.GameRootPath}/Dump/{fileName}.json", text);
+                    File.WriteAllText($"{BepInEx.Paths.GameRootPath}/Dump/{fileName}.json", text);
                 }
             }
             return true;
@@ -62,13 +62,15 @@ namespace MCSDataHelper
             {
                 return;
             }
-            if (!Directory.Exists($"{Paths.GameRootPath}/Mods"))
+            // 数据模板
+            var template = jsondata[0];
+            if (!Directory.Exists($"{BepInEx.Paths.GameRootPath}/Mods"))
             {
-                Directory.CreateDirectory($"{Paths.GameRootPath}/Mods");
+                Directory.CreateDirectory($"{BepInEx.Paths.GameRootPath}/Mods");
             }
             // 读取json列表
             List<string> jsonPathList = new List<string>();
-            AddJson(jsonPathList, path, $"{Paths.GameRootPath}/Mods");
+            AddJson(jsonPathList, path, $"{BepInEx.Paths.GameRootPath}/Mods");
             if (jsonPathList.Count > 0)
             {
                 foreach (var jsonPath in jsonPathList)
@@ -78,7 +80,17 @@ namespace MCSDataHelper
                     JSONObject jobj = new JSONObject(json, -2, false, false);
                     foreach (var j in jobj.list)
                     {
-                        jsondata.AddField(j["id"].I.ToString(), j);
+                        // 检查key与模板数据是否一致
+                        foreach (var k in template.keys)
+                        {
+                            if (!j.HasField(k))
+                            {
+                                // 如果没有，则使用模板值
+                                j.SetField(k, template[k]);
+                                Debug.Log($"json文件{jsonPath}中的数据缺少key{k}，使用模板数据{template[k]}代替");
+                            }
+                        }
+                        jsondata.SetField(j["id"].I.ToString(), j);
                     }
                 }
                 //File.WriteAllText(Paths.GameRootPath + "/ModLog.txt", jsondata.ToString());
@@ -95,8 +107,40 @@ namespace MCSDataHelper
             if (__instance.itemID >= 100000) return;
             if (__instance.itemID.ItemJson().HasField("ModIcon"))
             {
-                var tex = DataHelper.GetTex(__instance.itemID.ItemJson()["ModIcon"].str);
+                var tex = DataHelper.GetTex(__instance.itemID.ItemJson()["ModIcon"].Str);
+                var sprite = DataHelper.GetSprite(__instance.itemID.ItemJson()["ModIcon"].Str);
                 __instance.itemIcon = tex;
+                __instance.itemIconSprite = sprite;
+            }
+        }
+
+        [HarmonyPrefix, HarmonyPatch(typeof(item), "itemIcon", MethodType.Getter)]
+        public static bool ItemTexPatch(item __instance, ref Texture2D __result)
+        {
+            var json = __instance.itemID.ItemJson();
+            if (json != null && json.HasField("ModIcon"))
+            {
+                __result = DataHelper.GetTex(json["ModIcon"].Str);
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        [HarmonyPrefix, HarmonyPatch(typeof(item), "itemIconSprite", MethodType.Getter)]
+        public static bool ItemSpritePatch(item __instance, ref Sprite __result)
+        {
+            var json = __instance.itemID.ItemJson();
+            if (json != null && json.HasField("ModIcon"))
+            {
+                __result = DataHelper.GetSprite(json["ModIcon"].Str);
+                return false;
+            }
+            else
+            {
+                return true;
             }
         }
     }

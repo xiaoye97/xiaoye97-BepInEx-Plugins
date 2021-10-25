@@ -1,29 +1,32 @@
-﻿using System;
+using System;
 using GUIPackage;
 using UnityEngine;
 using System.Collections.Generic;
+using MCSDataHelper;
 
 namespace InGameWiki
 {
     public static class ItemSearchUI
     {
-        static string searchStr;
-        static string[] qualityStrs = new string[] { "全部", "一品", "二品", "三品", "四品", "五品", "六品" };
-        static string[] typeStrs = new string[] { "全部", "武器", "防具", "饰品", "技能书", "功法书", "丹药", "药材", "任务道具", "材料", "丹炉", "丹方", "药渣", "书籍", "书籍", "灵舟", "秘药", "其他" };
-        static int selectQuality, selectType, nowPage, maxPage, tmpPage, tmpShow;
-        static List<KeyValuePair<string, JSONObject>> ItemList = new List<KeyValuePair<string, JSONObject>>();
-        static Vector2 svPos;
-        public static JSONObject SelectItem;
+        private static string searchStr;
+        private static string[] qualityStrs = new string[] { "全部", "一品", "二品", "三品", "四品", "五品", "六品" };
+        private static string[] typeStrs = new string[] { "全部", "武器", "防具", "饰品", "技能书", "功法书", "丹药", "药材", "任务道具", "材料", "丹炉", "丹方", "药渣", "书籍", "书籍", "灵舟", "秘药", "其他" };
+        private static int selectQuality, selectType, nowPage, maxPage, tmpPage, tmpShow;
+        private static Vector2 svPos;
+        public static JSONClass._ItemJsonData SelectItem;
+        public static JSONObject SelectItemJson;
         public static item TooltipItem;
+
+        private static List<JSONClass._ItemJsonData> ItemList = new List<JSONClass._ItemJsonData>();
 
         /// <summary>
         /// 物品是否为目标品质
         /// </summary>
-        static bool IsTargetQuality(JSONObject itemdata)
+        private static bool IsTargetQuality(JSONClass._ItemJsonData itemdata)
         {
             if (selectQuality > 0)
             {
-                if (selectQuality != itemdata["quality"].I)
+                if (selectQuality != itemdata.quality)
                     return false;
             }
             return true;
@@ -32,11 +35,11 @@ namespace InGameWiki
         /// <summary>
         /// 物品是否为目标种类
         /// </summary>
-        static bool IsTargetType(JSONObject itemdata)
+        private static bool IsTargetType(JSONClass._ItemJsonData itemdata)
         {
             if (selectType > 0)
             {
-                if (selectType - 1 != itemdata["type"].I)
+                if (selectType - 1 != itemdata.type)
                     return false;
             }
             return true;
@@ -45,7 +48,7 @@ namespace InGameWiki
         /// <summary>
         /// 物品是否包含关键词
         /// </summary>
-        static bool ContainsSearch(JSONObject itemdata)
+        private static bool ContainsSearch(JSONClass._ItemJsonData itemdata)
         {
             if (!IsTargetQuality(itemdata)) return false;
             if (!IsTargetType(itemdata)) return false;
@@ -54,7 +57,7 @@ namespace InGameWiki
             bool result = true;
             foreach (var search in searchs)
             {
-                if (!itemdata["name"].str.UnCode64().Contains(search) && !itemdata["desc"].str.UnCode64().Contains(search) && !itemdata["desc2"].str.UnCode64().Contains(search) && !itemdata["id"].I.ToString().Contains(search))
+                if (!itemdata.name.Contains(search) && !itemdata.desc.Contains(search) && !itemdata.desc2.Contains(search) && !itemdata.id.ToString().Contains(search))
                 {
                     result = false;
                 }
@@ -65,14 +68,14 @@ namespace InGameWiki
         /// <summary>
         /// 根据关键词搜索物品
         /// </summary>
-        static void SearchItems()
+        private static void SearchItems()
         {
             ItemList.Clear();
-            foreach (var kv in jsonData.instance.ItemJsonData)
+            foreach (var item in JSONClass._ItemJsonData.DataList)
             {
-                if (ContainsSearch(kv.Value))
+                if (ContainsSearch(item))
                 {
-                    ItemList.Add(new KeyValuePair<string, JSONObject>(kv.Key, kv.Value));
+                    ItemList.Add(item);
                 }
             }
         }
@@ -80,7 +83,9 @@ namespace InGameWiki
         public static void OnGUI()
         {
             GUILayout.BeginVertical("物品搜索", GUI.skin.window, GUILayout.Height(300), GUILayout.ExpandWidth(true));
+
             #region 过滤及翻页
+
             GUILayout.BeginHorizontal(GUI.skin.box);
             //种类
             GUILayout.Label("种类", GUILayout.Width(30));
@@ -110,11 +115,12 @@ namespace InGameWiki
             tmpPage = 0;
             tmpShow = 0;
             GUILayout.EndHorizontal();
-            #endregion
+
+            #endregion 过滤及翻页
 
             //列表
             svPos = GUILayout.BeginScrollView(svPos);
-            foreach (var kv in ItemList)
+            foreach (var item in ItemList)
             {
                 if (tmpPage < nowPage * 30)
                 {
@@ -124,13 +130,14 @@ namespace InGameWiki
                 tmpShow++;
                 GUILayout.BeginHorizontal(GUI.skin.box);
                 GUILayout.Label($"{nowPage * 30 + tmpShow}", GUILayout.Width(40));
-                GUI.contentColor = ModTool.GetItemQualityColor(kv.Value);
-                if (GUILayout.Button(Tools.instance.Code64ToString(kv.Value["name"].str), GUILayout.Width(100)))
+                GUI.contentColor = item.GetQualityColor();
+                if (GUILayout.Button(item.name, GUILayout.Width(100)))
                 {
-                    SelectItem = kv.Value;
+                    SelectItem = item;
+                    SelectItemJson = item.id.ItemJson();
                 }
                 GUI.contentColor = Color.white;
-                GUILayout.Label($"{Tools.instance.Code64ToString(kv.Value["desc"].str)}");
+                GUILayout.Label(item.desc);
                 GUILayout.EndHorizontal();
                 if (tmpShow >= 30)
                 {

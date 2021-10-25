@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace MCSDataHelper
 {
-    [BepInPlugin("me.xiaoye97.plugin.MiChangSheng.MCSDataHelper", "觅长生数据前置", "1.1")]
+    [BepInPlugin("me.xiaoye97.plugin.MiChangSheng.MCSDataHelper", "觅长生数据前置", "1.2")]
     public class DataHelper : BaseUnityPlugin
     {
         public static ConfigEntry<bool> DumpConfig;
@@ -20,6 +20,7 @@ namespace MCSDataHelper
         public static JSONObject ExSave = new JSONObject(JSONObject.Type.OBJECT);
 
         private static Dictionary<string, Texture2D> TexDict = new Dictionary<string, Texture2D>();
+        private static Dictionary<string, Sprite> SpriteDict = new Dictionary<string, Sprite>();
 
         private void Awake()
         {
@@ -35,9 +36,9 @@ namespace MCSDataHelper
         public static Texture2D GetTex(string path)
         {
             if (TexDict.ContainsKey(path)) return TexDict[path];
-            if (File.Exists($"{Paths.GameRootPath}/{path}"))
+            if (File.Exists($"{BepInEx.Paths.GameRootPath}/{path}"))
             {
-                FileStream fs = new FileStream($"{Paths.GameRootPath}/{path}", FileMode.Open, FileAccess.Read);
+                FileStream fs = new FileStream($"{BepInEx.Paths.GameRootPath}/{path}", FileMode.Open, FileAccess.Read);
                 byte[] thebytes = new byte[fs.Length];
                 fs.Read(thebytes, 0, (int)fs.Length);
                 Texture2D texture = new Texture2D(1, 1);
@@ -49,6 +50,24 @@ namespace MCSDataHelper
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// 根据路径加载图片
+        /// </summary>
+        /// <param name="path">文件路径</param>
+        /// <returns></returns>
+        public static Sprite GetSprite(string path)
+        {
+            if (SpriteDict.ContainsKey(path)) return SpriteDict[path];
+            var tex = GetTex(path);
+            if (tex == null)
+            {
+                return null;
+            }
+            var sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+            SpriteDict.Add(path, sprite);
+            return sprite;
         }
 
         /// <summary>

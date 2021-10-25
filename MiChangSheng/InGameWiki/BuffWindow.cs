@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -7,23 +7,22 @@ namespace InGameWiki
     public static class BuffWindow
     {
         public static bool ShowBuff;
-        static Rect winRect = new Rect((Screen.width - 1200) / 2, (Screen.height - 700) / 2, 1200, 700);
-        static Vector2 svPos;
-        static int nowPage, maxPage, tmpPage, tmpShow;
-        static string searchStr;
-        static List<string> nameList = new List<string>();
-        static List<string> descList = new List<string>();
-        static List<int> idList = new List<int>();
-        static List<int> showList = new List<int>();
+        private static Rect winRect = new Rect((Screen.width - 1200) / 2, (Screen.height - 700) / 2, 1200, 700);
+        private static Vector2 svPos;
+        private static int nowPage, maxPage, tmpPage, tmpShow;
+        private static string searchStr;
+        private static List<string> nameList = new List<string>();
+        private static List<string> descList = new List<string>();
+        private static List<int> idList = new List<int>();
+        private static List<int> showList = new List<int>();
 
         public static void Init()
         {
-            JSONObject buffs = jsonData.instance._BuffJsonData;
-            foreach (var buff in buffs.list)
+            foreach (var buff in JSONClass._BuffJsonData.DataList)
             {
-                idList.Add(buff["buffid"].I);
-                nameList.Add(buff["name"].str.UnCode64());
-                descList.Add(buff["descr"].str.UnCode64());
+                idList.Add(buff.buffid);
+                nameList.Add(buff.name);
+                descList.Add(buff.descr);
             }
         }
 
@@ -35,7 +34,7 @@ namespace InGameWiki
             }
         }
 
-        static bool ContainsSearch(string str)
+        private static bool ContainsSearch(string str)
         {
             if (string.IsNullOrWhiteSpace(searchStr)) return true;
             string[] searchs = searchStr.Split(' ');
@@ -50,12 +49,12 @@ namespace InGameWiki
             return result;
         }
 
-        static void SearchBuffs()
+        private static void SearchBuffs()
         {
             showList.Clear();
             if (string.IsNullOrWhiteSpace(searchStr))
             {
-                for(int i = 0; i < idList.Count; i++)
+                for (int i = 0; i < idList.Count; i++)
                 {
                     showList.Add(i);
                 }
@@ -72,7 +71,7 @@ namespace InGameWiki
             if (showList.Count % 30 != 0) maxPage++;
         }
 
-        static void WindowFunc(int id)
+        private static void WindowFunc(int id)
         {
             if (idList.Count == 0)
             {
@@ -93,7 +92,7 @@ namespace InGameWiki
             if (GUILayout.Button("关闭", GUILayout.Width(80))) ShowBuff = false;
             GUILayout.EndHorizontal();
             svPos = GUILayout.BeginScrollView(svPos, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
-            
+
             foreach (var buff in showList)
             {
                 if (tmpPage < nowPage * 30)

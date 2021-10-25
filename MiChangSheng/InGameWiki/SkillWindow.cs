@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -7,14 +7,14 @@ namespace InGameWiki
     public static class SkillWindow
     {
         public static bool ShowSkill;
-        static Rect winRect = new Rect((Screen.width - 1200) / 2, (Screen.height - 700) / 2, 1200, 700);
-        static Vector2 svPos;
-        static int nowPage, maxPage, tmpPage, tmpShow;
-        static string searchStr;
-        static List<string> nameList = new List<string>();
-        static List<string> descList = new List<string>();
-        static List<int> idList = new List<int>();
-        static List<int> showList = new List<int>();
+        private static Rect winRect = new Rect((Screen.width - 1200) / 2, (Screen.height - 700) / 2, 1200, 700);
+        private static Vector2 svPos;
+        private static int nowPage, maxPage, tmpPage, tmpShow;
+        private static string searchStr;
+        private static List<string> nameList = new List<string>();
+        private static List<string> descList = new List<string>();
+        private static List<int> idList = new List<int>();
+        private static List<int> showList = new List<int>();
 
         public static void Init()
         {
@@ -22,8 +22,8 @@ namespace InGameWiki
             foreach (var buff in buffs.list)
             {
                 idList.Add(buff["id"].I);
-                nameList.Add(buff["name"].str.UnCode64());
-                descList.Add(buff["descr"].str.UnCode64());
+                nameList.Add(buff["name"].Str);
+                descList.Add(buff["descr"].Str);
             }
         }
 
@@ -35,7 +35,7 @@ namespace InGameWiki
             }
         }
 
-        static bool ContainsSearch(string str)
+        private static bool ContainsSearch(string str)
         {
             if (string.IsNullOrWhiteSpace(searchStr)) return true;
             string[] searchs = searchStr.Split(' ');
@@ -50,7 +50,7 @@ namespace InGameWiki
             return result;
         }
 
-        static void SearchBuffs()
+        private static void SearchBuffs()
         {
             showList.Clear();
             if (string.IsNullOrWhiteSpace(searchStr))
@@ -72,7 +72,7 @@ namespace InGameWiki
             if (showList.Count % 30 != 0) maxPage++;
         }
 
-        static void WindowFunc(int id)
+        private static void WindowFunc(int id)
         {
             if (idList.Count == 0)
             {

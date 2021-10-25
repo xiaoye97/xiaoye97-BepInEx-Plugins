@@ -11,7 +11,11 @@ namespace MCSDataHelper
         public static JSONObject ItemJson(this int id)
         {
             if (id == 0) return null;
-            return jsonData.instance.ItemJsonData[id.ToString()];
+            if (jsonData.instance.ItemJsonData.ContainsKey(id.ToString()))
+            {
+                return jsonData.instance.ItemJsonData[id.ToString()];
+            }
+            return null;
         }
 
         /// <summary>

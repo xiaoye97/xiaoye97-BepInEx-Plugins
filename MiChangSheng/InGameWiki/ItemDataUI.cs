@@ -1,19 +1,21 @@
-﻿using System;
+using System;
 using UnityEngine;
+using MCSDataHelper;
 using System.Collections.Generic;
 
 namespace InGameWiki
 {
     public static class ItemDataUI
     {
-        static Vector2 svPos, exSvPos, ex2SvPos;
+        private static Vector2 svPos, exSvPos, ex2SvPos;
+
         public static void OnGUI()
         {
             GUILayout.BeginHorizontal("物品详情", GUI.skin.window, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
             if (ItemSearchUI.SelectItem != null)
             {
                 GUILayout.BeginVertical(GUI.skin.box, GUILayout.Width(120));
-                Texture2D icon = ModTool.GetIcon(ItemSearchUI.SelectItem);
+                Texture2D icon = DataHelper.GetIcon(ItemSearchUI.SelectItemJson);
                 if (icon != null)
                 {
                     GUILayout.Label(icon);
@@ -26,7 +28,7 @@ namespace InGameWiki
                 {
                     if (GUILayout.Button("显示JSON数据"))
                     {
-                        JsonUI.Json = ItemSearchUI.SelectItem;
+                        JsonUI.Json = ItemSearchUI.SelectItemJson;
                     }
                 }
                 GUILayout.EndVertical();
@@ -39,35 +41,36 @@ namespace InGameWiki
             else
             {
                 GUI.contentColor = ItemSearchUI.SelectItem.GetQualityColor();
-                GUILayout.Label($"物品名称: {ItemSearchUI.SelectItem["name"].str.UnCode64()}");
+                GUILayout.Label($"物品名称: {ItemSearchUI.SelectItem.name}");
                 GUI.contentColor = Color.white;
-                GUILayout.Label($"ID: {ItemSearchUI.SelectItem["id"].I}");
-                GUILayout.Label($"品质: {ItemSearchUI.SelectItem["quality"].I}品");
-                GUILayout.Label($"类别: {Tools.getStr("ItemType" + (int)ItemSearchUI.SelectItem["type"].n)}");
-                GUILayout.Label($"简介: {ItemSearchUI.SelectItem["desc"].str.UnCode64()}");
-                GUILayout.Label($"描述: {ItemSearchUI.SelectItem["desc2"].str.UnCode64()}");
-                GUILayout.Label($"最大堆叠: { ItemSearchUI.SelectItem["maxNum"].I }");
-                GUILayout.Label($"价格: { ItemSearchUI.SelectItem["price"].I }");
-                switch ((int)ItemSearchUI.SelectItem["type"].n)
+                GUILayout.Label($"ID: {ItemSearchUI.SelectItem.id}");
+                GUILayout.Label($"品质: {ItemSearchUI.SelectItem.quality}品");
+                GUILayout.Label($"类别: {Tools.getStr("ItemType" + ItemSearchUI.SelectItem.type)}");
+                GUILayout.Label($"简介: {ItemSearchUI.SelectItem.desc}");
+                GUILayout.Label($"描述: {ItemSearchUI.SelectItem.desc2}");
+                GUILayout.Label($"最大堆叠: { ItemSearchUI.SelectItem.maxNum }");
+                GUILayout.Label($"价格: { ItemSearchUI.SelectItem.price }");
+                switch (ItemSearchUI.SelectItem.type)
                 {
-                    case 6: //药材
+                    case 6: // 药材
                         GUILayout.Label("【药性】");
-                        GUILayout.Label($"用于主药: {Tools.getLiDanLeiXinStr((int)ItemSearchUI.SelectItem["yaoZhi2"].n)}");
-                        GUILayout.Label($"用于辅药: {Tools.getLiDanLeiXinStr((int)ItemSearchUI.SelectItem["yaoZhi3"].n)}");
-                        GUILayout.Label($"用于药引: {Tools.getLiDanLeiXinStr((int)ItemSearchUI.SelectItem["yaoZhi1"].n)}");
+                        GUILayout.Label($"用于主药: {Tools.getLiDanLeiXinStr(ItemSearchUI.SelectItem.yaoZhi2)}");
+                        GUILayout.Label($"用于辅药: {Tools.getLiDanLeiXinStr(ItemSearchUI.SelectItem.yaoZhi3)}");
+                        GUILayout.Label($"用于药引: {Tools.getLiDanLeiXinStr(ItemSearchUI.SelectItem.yaoZhi1)}");
                         break;
                 }
             }
             GUILayout.EndScrollView();
-            //联动数据1
+            // 联动数据1
             if (ItemSearchUI.SelectItem != null)
             {
-                switch ((int)ItemSearchUI.SelectItem["type"].n)
+                switch (ItemSearchUI.SelectItem.type)
                 {
-                    case 5: //丹药
+                    case 5: // 丹药
                         DanYaoUI(ItemSearchUI.SelectItem);
                         break;
-                    case 6: //药材
+
+                    case 6: // 药材
                         YaoCaiUI(ItemSearchUI.SelectItem);
                         break;
                 }
@@ -76,7 +79,7 @@ namespace InGameWiki
             if (ItemSearchUI.SelectItem != null)
             {
                 //6药材 8材料
-                if ((int)ItemSearchUI.SelectItem["type"].n == 6 || (int)ItemSearchUI.SelectItem["type"].n == 8)
+                if (ItemSearchUI.SelectItem.type == 6 || ItemSearchUI.SelectItem.type == 8)
                 {
                     CaiJiDiUI(ItemSearchUI.SelectItem);
                 }
@@ -87,12 +90,12 @@ namespace InGameWiki
         /// <summary>
         /// 联动数据用的Label，带跳转按钮
         /// </summary>
-        static void LianDongLabel(string label, JSONObject item)
+        private static void LianDongLabel(string label, JSONClass._ItemJsonData item)
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label(label, GUILayout.Width(60));
             GUI.contentColor = item.GetQualityColor();
-            if (GUILayout.Button(item["name"].str.UnCode64(), GUILayout.Width(100)))
+            if (GUILayout.Button(item.name, GUILayout.Width(100)))
             {
                 ItemSearchUI.SelectItem = item;
             }
@@ -103,24 +106,34 @@ namespace InGameWiki
         /// <summary>
         /// 联动数据 - 丹方数据UI
         /// </summary>
-        static void DanFangDataUI(JSONObject df)
+        private static void DanFangDataUI(JSONObject df)
         {
-            JSONObject danYao = df["ItemID"].I.ItemJson();
-            JSONObject yaoYin = df["value1"].I.ItemJson();
-            JSONObject zhuYao1 = df["value2"].I.ItemJson();
-            JSONObject zhuYao2 = df["value3"].I.ItemJson();
-            JSONObject fuYao1 = df["value4"].I.ItemJson();
-            JSONObject fuYao2 = df["value5"].I.ItemJson();
+            JSONClass._ItemJsonData danYao = JSONClass._ItemJsonData.DataDict[df["ItemID"].I];
             GUI.contentColor = danYao.GetQualityColor();
-            GUILayout.BeginVertical($"联动数据: 丹方 {df["name"].str.UnCode64()}", GUI.skin.window);
+            GUILayout.BeginVertical($"联动数据: 丹方 {df["name"].Str}", GUI.skin.window);
             GUI.contentColor = Color.white;
             LianDongLabel("丹药", danYao);
-            GUILayout.Label($"用途: {danYao["desc"].str.UnCode64()}");
-            if (df["value1"].I != 0) LianDongLabel($"药引  {df["num1"].I}x", yaoYin);
-            if (df["value2"].I != 0) LianDongLabel($"主药  {df["num2"].I}x", zhuYao1);
-            if (df["value3"].I != 0) LianDongLabel($"主药2 {df["num3"].I}x", zhuYao2);
-            if (df["value4"].I != 0) LianDongLabel($"辅药  {df["num4"].I}x", fuYao1);
-            if (df["value5"].I != 0) LianDongLabel($"辅药2 {df["num5"].I}x", fuYao2);
+            GUILayout.Label($"用途: {danYao.desc}");
+            if (df["value1"].I != 0)
+            {
+                LianDongLabel($"药引  {df["num1"].I}x", JSONClass._ItemJsonData.DataDict[df["value1"].I]);
+            }
+            if (df["value2"].I != 0)
+            {
+                LianDongLabel($"主药  {df["num2"].I}x", JSONClass._ItemJsonData.DataDict[df["value2"].I]);
+            }
+            if (df["value3"].I != 0)
+            {
+                LianDongLabel($"主药2 {df["num3"].I}x", JSONClass._ItemJsonData.DataDict[df["value3"].I]);
+            }
+            if (df["value4"].I != 0)
+            {
+                LianDongLabel($"辅药  {df["num4"].I}x", JSONClass._ItemJsonData.DataDict[df["value4"].I]);
+            }
+            if (df["value5"].I != 0)
+            {
+                LianDongLabel($"辅药2 {df["num5"].I}x", JSONClass._ItemJsonData.DataDict[df["value5"].I]);
+            }
             GUILayout.Label($"花费时间: {df["castTime"].I}天");
             GUILayout.EndVertical();
         }
@@ -128,13 +141,12 @@ namespace InGameWiki
         /// <summary>
         /// 丹药UI
         /// </summary>
-        static void DanYaoUI(JSONObject item)
+        private static void DanYaoUI(JSONClass._ItemJsonData item)
         {
-            int id = item["id"].I;
             List<JSONObject> dfList = new List<JSONObject>();
             foreach (var df in jsonData.instance.LianDanDanFangBiao.list)
             {
-                if (df["ItemID"].I == id)
+                if (df["ItemID"].I == item.id)
                 {
                     dfList.Add(df);
                 }
@@ -153,15 +165,14 @@ namespace InGameWiki
         /// <summary>
         /// 药材UI
         /// </summary>
-        static void YaoCaiUI(JSONObject item)
+        private static void YaoCaiUI(JSONClass._ItemJsonData item)
         {
-            int id = item["id"].I;
             List<JSONObject> dfList = new List<JSONObject>();
             foreach (var df in jsonData.instance.LianDanDanFangBiao.list)
             {
                 for (int i = 1; i <= 5; i++)
                 {
-                    if (df[$"value{i}"].I == id)
+                    if (df[$"value{i}"].I == item.id)
                     {
                         dfList.Add(df);
                         continue;
@@ -182,19 +193,19 @@ namespace InGameWiki
         /// <summary>
         /// 联动数据 - 采集地UI
         /// </summary>
-        static void CaiJiDiDataUI(JSONObject caijidi)
+        private static void CaiJiDiDataUI(JSONObject caijidi)
         {
-            List<JSONObject> items = new List<JSONObject>();
+            List<JSONClass._ItemJsonData> items = new List<JSONClass._ItemJsonData>();
             for (int i = 1; i <= 8; i++)
             {
                 if (caijidi[$"value{i}"].I != 0)
                 {
-                    items.Add(caijidi[$"value{i}"].I.ItemJson());
+                    items.Add(JSONClass._ItemJsonData.DataDict[caijidi[$"value{i}"].I]);
                 }
             }
             if (items.Count > 0)
             {
-                GUILayout.BeginVertical($"联动数据: 采集地 {caijidi["name"].str.UnCode64()}", GUI.skin.window);
+                GUILayout.BeginVertical($"联动数据: 采集地 {caijidi["name"].Str}", GUI.skin.window);
                 foreach (var item in items)
                 {
                     LianDongLabel("采集物", item);
@@ -206,15 +217,14 @@ namespace InGameWiki
         /// <summary>
         /// 采集地UI
         /// </summary>
-        static void CaiJiDiUI(JSONObject item)
+        private static void CaiJiDiUI(JSONClass._ItemJsonData item)
         {
-            int id = item["id"].I;
             List<JSONObject> caijidiList = new List<JSONObject>();
             foreach (var caijidi in jsonData.instance.CaiYaoDiaoLuo.list)
             {
                 for (int i = 1; i <= 8; i++)
                 {
-                    if (caijidi[$"value{i}"].I == id)
+                    if (caijidi[$"value{i}"].I == item.id)
                     {
                         caijidiList.Add(caijidi);
                         continue;

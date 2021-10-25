@@ -1,6 +1,7 @@
-﻿/*
+/*
  JSON显示默认关闭，仅开发时使用
  */
+
 using System;
 using UnityEngine;
 
@@ -8,18 +9,20 @@ namespace InGameWiki
 {
     public static class JsonUI
     {
-        static JSONObject json;
-        static string jsonStr;
+        private static JSONObject json;
+        private static string jsonStr;
+
         public static JSONObject Json
         {
             get { return json; }
             set
             {
                 json = value.Clone();
-                jsonStr = json.ToString().UnCode64();
+                jsonStr = json.ToString().ToCN();
             }
         }
-        static Vector2 listPos, jsonPos;
+
+        private static Vector2 listPos, jsonPos;
 
         public static void OnGUI()
         {
