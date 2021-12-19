@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using BepInEx;
 using HarmonyLib;
 using UnityEngine;
+using UnityEngine.UI;
 using BepInEx.Configuration;
 
 namespace AdvancedBuildDestruct
@@ -9,6 +11,8 @@ namespace AdvancedBuildDestruct
     [BepInPlugin("me.xiaoye97.plugin.Dyson.AdvancedBuildDestruct", "AdvancedBuildDestruct", "1.0.5")]
     public class AdvancedBuildDestruct : BaseUnityPlugin
     {
+        Harmony harmony;
+
         public static ConfigEntry<float> FindBuildDistance;
         public static ConfigEntry<KeyCode> BuildKey, DestructKey;
         public static ConfigEntry<int> BuildExtraSpacing;
@@ -16,6 +20,27 @@ namespace AdvancedBuildDestruct
         public static bool buildKeyUp;
         public static float buildKeyCD;
         private UIBuildMenu UIBuildMenu;
+
+        public static List<UIKeyTipNode> allTips;
+        public static UIKeyTipNode tipBuildToggle;
+        public static UIKeyTipNode tipBuildPlus;
+        public static UIKeyTipNode tipBuildMinus;
+        public static UIKeyTipNode tipDestructPlus;
+        public static UIKeyTipNode tipDestructMinus;
+
+        private static PlayerController _pc;
+        internal static PlayerController pc
+        {
+            get
+            {
+                if (_pc == null)
+                {
+                    var go = GameObject.Find("Player (Icarus)");
+                    _pc = go.GetComponent<PlayerController>();
+                }
+                return _pc;
+            }
+        }
 
         void Start()
         {
@@ -31,9 +56,18 @@ namespace AdvancedBuildDestruct
             {
                 FindBuildDistance.Value = 0;
             }
-            Harmony.CreateAndPatchAll(typeof(BuildPatch));
-            Harmony.CreateAndPatchAll(typeof(DestructPatch));
-            Harmony.CreateAndPatchAll(typeof(AdvancedBuildDestruct));
+
+            harmony = new Harmony("me.xiaoye97.plugin.Dyson.AdvancedBuildDestruct");
+            try
+            {
+                harmony.PatchAll(typeof(BuildPatch));
+                harmony.PatchAll(typeof(DestructPatch));
+                harmony.PatchAll(typeof(AdvancedBuildDestruct));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
         }
 
         void Update()
@@ -95,21 +129,51 @@ namespace AdvancedBuildDestruct
             }
         }
 
+        internal void OnDestroy()
+        {
+            harmony.UnpatchSelf();  // For ScriptEngine hot-reloading
+            allTips.Remove(tipBuildToggle);
+            allTips.Remove(tipBuildPlus);
+            allTips.Remove(tipBuildMinus);
+            allTips.Remove(tipDestructPlus);
+            allTips.Remove(tipDestructMinus);
+        }
+
+        [HarmonyPrefix, HarmonyPatch(typeof(UIKeyTips), "UpdateTipDesiredState")]
+        public static void UpdateTipDesiredStatePatch(UIKeyTips __instance, ref List<UIKeyTipNode> ___allTips)
+        {
+            if (!tipBuildToggle)
+            {
+                allTips = ___allTips;
+                tipBuildToggle = __instance.RegisterTip("ALT", "Toggle repeated build");
+                tipBuildPlus = __instance.RegisterTip("+", "Increase build gap");
+                tipBuildMinus = __instance.RegisterTip("-", "Decrease build gap");
+                tipDestructPlus = __instance.RegisterTip("+", "Increase area");
+                tipDestructMinus = __instance.RegisterTip("-", "Decrease area");
+            }
+            int mode = pc.cmd.mode;
+            tipBuildToggle.desired= UIGame.viewMode == EViewMode.Build && mode >= 0;
+            tipBuildPlus.desired= UIGame.viewMode == EViewMode.Build && mode >= 0 && BuildPatch.begin;
+            tipBuildMinus.desired= UIGame.viewMode == EViewMode.Build && mode >= 0 && BuildPatch.begin;
+            tipDestructPlus.desired= UIGame.viewMode == EViewMode.Build && mode == -1;
+            tipDestructMinus.desired= UIGame.viewMode == EViewMode.Build && mode == -1;
+        }
+
         [HarmonyPostfix, HarmonyPatch(typeof(UIGeneralTips), "_OnUpdate")]
-        public static void TipsPatch(UIGeneralTips __instance)
+        public static void TipsPatch(ref Text ___modeText)
         {
             if (UIGame.viewMode == EViewMode.Build)
             {
-                int mode = __instance.gameData.mainPlayer.controller.cmd.mode;
+                int mode = pc.cmd.mode;
                 if (mode == -1) // 拆除模式
                 {
-                    __instance.modeText.text = "拆除模式".Translate() + $" {FindBuildDistance.Value.ToString("0")}";
+                    ___modeText.text += $" - Area {FindBuildDistance.Value.ToString("0")}";
                 }
                 else if (mode >= 0) // 建造模式
                 {
                     if (BuildPatch.begin)
                     {
-                        __instance.modeText.text = "建造模式".Translate() + $" {BuildExtraSpacing.Value}";
+                        ___modeText.text += $" - Spacing {BuildExtraSpacing.Value}";
                     }
                 }
             }
